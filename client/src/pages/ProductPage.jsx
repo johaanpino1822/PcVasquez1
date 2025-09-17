@@ -14,7 +14,9 @@ import {
   FaShare, 
   FaExpand,
   FaMinus, 
-  FaPlus 
+  FaPlus,
+  FaPlay,
+  FaPause
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
@@ -32,6 +34,7 @@ const ProductPage = () => {
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(false);
 
   // Paleta de colores premium
   const colors = {
@@ -69,6 +72,17 @@ const ProductPage = () => {
 
     fetchProduct();
   }, [id, navigate]);
+
+  // Auto-play para el carrusel
+  useEffect(() => {
+    let interval;
+    if (autoPlay && product?.images?.length > 1) {
+      interval = setInterval(() => {
+        setSelectedImage(prev => (prev + 1) % product.images.length);
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [autoPlay, product?.images]);
 
   const handleAddToCart = async () => {
     if (!product || quantity < 1) return;
@@ -180,10 +194,12 @@ const ProductPage = () => {
     );
   }
 
-  const images = [
-    product.image ? getImageUrl(product.image) : '/placeholder.jpg',
-    ...(product.additionalImages?.map(img => getImageUrl(img))) || []
-  ];
+  // Usar product.images si está disponible, de lo contrario usar product.image como respaldo
+  const images = product.images && product.images.length > 0 
+    ? product.images.map(img => getImageUrl(img)) 
+    : product.image 
+      ? [getImageUrl(product.image)] 
+      : ['/placeholder.jpg'];
 
   const mainImage = images[selectedImage] || '/placeholder.jpg';
 
@@ -197,24 +213,29 @@ const ProductPage = () => {
           className="bg-white rounded-3xl shadow-xl overflow-hidden"
         >
           <div className="md:flex">
-            {/* Gallery Section */}
+            {/* Gallery Section - Mejorada */}
             <div className="md:w-1/2 relative">
-              <div className="relative h-[500px] bg-gradient-to-br from-[#0C4B45]/10 to-[#83F4E9]/10 flex items-center justify-center p-10">
-                <motion.img
-                  src={mainImage}
-                  alt={product.name}
-                  className="max-h-full max-w-full object-contain cursor-zoom-in"
-                  onClick={() => setShowFullscreenImage(true)}
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: 'spring', stiffness: 400 }}
-                />
+              <div className="relative h-[500px] bg-gradient-to-br from-[#0C4B45]/10 to-[#83F4E9]/10 flex items-center justify-center p-10 overflow-hidden">
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={selectedImage}
+                    src={mainImage}
+                    alt={product.name}
+                    className="max-h-full max-w-full object-contain cursor-zoom-in absolute"
+                    onClick={() => setShowFullscreenImage(true)}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.1 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </AnimatePresence>
                 
                 {/* Image Navigation */}
                 {images.length > 1 && (
                   <>
                     <motion.button 
                       onClick={(e) => { e.stopPropagation(); prevImage(); }}
-                      className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10"
+                      className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10 backdrop-blur-sm"
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                     >
@@ -222,7 +243,7 @@ const ProductPage = () => {
                     </motion.button>
                     <motion.button 
                       onClick={(e) => { e.stopPropagation(); nextImage(); }}
-                      className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10"
+                      className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10 backdrop-blur-sm"
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                     >
@@ -231,10 +252,26 @@ const ProductPage = () => {
                   </>
                 )}
                 
+                {/* Auto-play Controls */}
+                {images.length > 1 && (
+                  <motion.button
+                    onClick={() => setAutoPlay(!autoPlay)}
+                    className="absolute top-6 left-6 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10 backdrop-blur-sm"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    {autoPlay ? (
+                      <FaPause className="text-[#662D8F] text-lg" />
+                    ) : (
+                      <FaPlay className="text-[#662D8F] text-lg" />
+                    )}
+                  </motion.button>
+                )}
+                
                 {/* Fullscreen Button */}
                 <motion.button
                   onClick={(e) => { e.stopPropagation(); setShowFullscreenImage(true); }}
-                  className="absolute bottom-6 right-6 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10"
+                  className="absolute top-6 right-6 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10 backdrop-blur-sm"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -243,7 +280,7 @@ const ProductPage = () => {
                 
                 {/* Image Indicators */}
                 {images.length > 1 && (
-                  <div className="absolute bottom-6 left-0 right-0 flex justify-center space-x-2">
+                  <div className="absolute bottom-6 left-0 right-0 flex justify-center space-x-2 z-10">
                     {images.map((_, index) => (
                       <motion.button 
                         key={index}
@@ -256,7 +293,7 @@ const ProductPage = () => {
                 )}
               </div>
               
-              {/* Thumbnails */}
+              {/* Thumbnails - Mejorado */}
               {images.length > 1 && (
                 <div className="p-6 flex space-x-4 overflow-x-auto">
                   {images.map((img, index) => (
@@ -264,13 +301,16 @@ const ProductPage = () => {
                       key={index}
                       onClick={() => setSelectedImage(index)}
                       className={`flex-shrink-0 w-20 h-20 border-2 rounded-xl overflow-hidden transition-all ${selectedImage === index ? 'border-[#662D8F] shadow-md' : 'border-transparent hover:border-gray-200'}`}
-                      whileHover={{ y: -3 }}
+                      whileHover={{ y: -3, scale: 1.05 }}
                     >
                       <img 
                         src={img} 
                         alt={`Miniatura ${index + 1}`}
                         className="w-full h-full object-cover bg-gray-50"
                       />
+                      {selectedImage === index && (
+                        <div className="absolute inset-0 border-2 border-[#662D8F] rounded-xl" />
+                      )}
                     </motion.button>
                   ))}
                 </div>
@@ -486,7 +526,7 @@ const ProductPage = () => {
         </motion.div>
       </div>
       
-      {/* Fullscreen Image Modal */}
+      {/* Fullscreen Image Modal - Mejorado */}
       <AnimatePresence>
         {showFullscreenImage && (
           <motion.div 
@@ -494,6 +534,7 @@ const ProductPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            onClick={() => setShowFullscreenImage(false)}
           >
             <motion.div 
               className="relative max-w-6xl w-full max-h-[90vh]"
@@ -501,37 +542,42 @@ const ProductPage = () => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: 'spring', damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
             >
               <motion.button
                 onClick={() => setShowFullscreenImage(false)}
-                className="absolute top-6 right-6 text-white text-4xl z-10 hover:text-[#F2A9FD] transition-colors"
+                className="absolute top-6 right-6 text-white text-4xl z-10 hover:text-[#F2A9FD] transition-colors bg-black/30 rounded-full p-2"
                 whileHover={{ rotate: 90, scale: 1.1 }}
               >
                 &times;
               </motion.button>
               
               <div className="relative h-full w-full flex items-center justify-center">
-                <motion.img
-                  src={mainImage}
-                  alt={product.name}
-                  className="max-h-full max-w-full object-contain"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                />
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={selectedImage}
+                    src={mainImage}
+                    alt={product.name}
+                    className="max-h-full max-w-full object-contain"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.1 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </AnimatePresence>
                 
                 {images.length > 1 && (
                   <>
                     <motion.button 
-                      onClick={prevImage}
-                      className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 p-4 rounded-full text-white text-xl"
+                      onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                      className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 p-4 rounded-full text-white text-xl backdrop-blur-sm"
                       whileHover={{ scale: 1.1 }}
                     >
                       <FaChevronLeft />
                     </motion.button>
                     <motion.button 
-                      onClick={nextImage}
-                      className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 p-4 rounded-full text-white text-xl"
+                      onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                      className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 p-4 rounded-full text-white text-xl backdrop-blur-sm"
                       whileHover={{ scale: 1.1 }}
                     >
                       <FaChevronRight />
@@ -541,11 +587,17 @@ const ProductPage = () => {
                       {images.map((_, index) => (
                         <motion.button 
                           key={index}
-                          onClick={() => setSelectedImage(index)}
+                          onClick={(e) => { e.stopPropagation(); setSelectedImage(index); }}
                           className={`w-3 h-3 rounded-full transition-all ${selectedImage === index ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/70'}`}
                           whileHover={{ scale: 1.2 }}
                         />
                       ))}
+                    </div>
+
+                    <div className="absolute top-6 left-6 text-white flex items-center space-x-2">
+                      <span className="text-sm bg-black/30 px-2 py-1 rounded">
+                        {selectedImage + 1} / {images.length}
+                      </span>
                     </div>
                   </>
                 )}

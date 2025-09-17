@@ -2,17 +2,14 @@ const axios = require('axios');
 const crypto = require('crypto');
 const Order = require('../models/Order');
 
-// Función para validar el payload de pago
 function validatePaymentData(paymentMethod, order) {
   const errors = [];
   
-  // Validar método de pago
   const validMethods = ['CARD', 'NEQUI', 'PSE', 'BANCOLOMBIA_TRANSFER', 'DAVIPLATA'];
   if (!validMethods.includes(paymentMethod.type)) {
     errors.push('Método de pago no soportado');
   }
 
-  // Validaciones específicas para tarjetas
   if (paymentMethod.type === 'CARD') {
     if (!paymentMethod.token || !/^tok_(test|live)_[a-zA-Z0-9_]{16,}$/.test(paymentMethod.token)) {
       errors.push('Token de pago inválido para tarjeta');
@@ -22,7 +19,6 @@ function validatePaymentData(paymentMethod, order) {
     }
   }
 
-  // Validar datos del cliente
   if (!order.customerInfo.email || !/^\S+@\S+\.\S+$/.test(order.customerInfo.email)) {
     errors.push('Email del cliente inválido');
   }
@@ -38,7 +34,6 @@ function validatePaymentData(paymentMethod, order) {
   return errors;
 }
 
-// Función para generar firma de integridad
 function generateWompiSignature(reference, amount, currency) {
   const secret = process.env.WOMPI_INTEGRITY_SECRET;
   if (!secret) throw new Error('WOMPI_INTEGRITY_SECRET no configurado');
@@ -51,7 +46,6 @@ exports.createPayment = async (req, res) => {
   try {
     const { orderId, paymentMethod } = req.body;
     
-    // Validar datos de entrada
     if (!orderId || !paymentMethod || !paymentMethod.type) {
       return res.status(400).json({
         success: false,
@@ -67,7 +61,6 @@ exports.createPayment = async (req, res) => {
       });
     }
 
-    // Validar datos del pago
     const validationErrors = validatePaymentData(paymentMethod, order);
     if (validationErrors.length > 0) {
       return res.status(400).json({
@@ -76,15 +69,14 @@ exports.createPayment = async (req, res) => {
       });
     }
 
-    // Preparar datos para Wompi
     const amountInCents = Math.round(order.total * 100);
-    const reference = `ORD-${order._id}-${Date.now()}`;
-    const phoneNumber = order.customerInfo.phone.replace(/\D/g, '');
+    const reference = order.orderNumber;
+    const phoneNumber = order.shippingInfo.phone.replace(/\D/g, '');
     
     const transactionData = {
       amount_in_cents: amountInCents,
       currency: 'COP',
-      customer_email: order.customerInfo.email.toLowerCase().trim(),
+      customer_email: order.shippingInfo.email.toLowerCase().trim(),
       payment_method: {
         type: paymentMethod.type,
         installments: paymentMethod.installments || 1,
@@ -94,27 +86,18 @@ exports.createPayment = async (req, res) => {
       reference: reference,
       redirect_url: `${process.env.FRONTEND_URL}/order/${order._id}`,
       customer_data: {
-        full_name: order.customerInfo.name.trim(),
-        phone_number: phoneNumber.startsWith('57') ? phoneNumber.substring(2) : phoneNumber, // Eliminar código país
-        email: order.customerInfo.email.toLowerCase().trim(),
-        legal_id: order.customerInfo.legal_id.toString(),
-        legal_id_type: order.customerInfo.legal_id_type || 'CC'
+        full_name: order.shippingInfo.name.trim(),
+        phone_number: phoneNumber.startsWith('57') ? phoneNumber.substring(2) : phoneNumber,
+        email: order.shippingInfo.email.toLowerCase().trim(),
+        legal_id: order.shippingInfo.legal_id || '0000000000',
+        legal_id_type: order.shippingInfo.legal_id_type || 'CC'
       },
       acceptance_token: process.env.WOMPI_ACCEPTANCE_TOKEN,
-      signature: generateWompiSignature(reference, amountInCents, 'COP') // Firma de integridad
+      signature: generateWompiSignature(reference, amountInCents, 'COP')
     };
 
-    console.log('Payload para Wompi:', {
-      ...transactionData,
-      payment_method: {
-        ...transactionData.payment_method,
-        token: transactionData.payment_method.token ? '***REDACTED***' : null
-      }
-    });
-
-    // Crear transacción en Wompi (PRODUCCIÓN)
     const response = await axios.post(
-      `${process.env.WOMPI_API_URL}/transactions`, // URL de producción
+      `${process.env.WOMPI_API_URL || 'https://production.wompi.co'}/v1/transactions`,
       transactionData, 
       {
         headers: {
@@ -125,12 +108,10 @@ exports.createPayment = async (req, res) => {
       }
     );
 
-    // Validar respuesta de Wompi
     if (!response.data?.data?.id) {
       throw new Error('Respuesta inválida de Wompi');
     }
 
-    // Actualizar orden
     order.paymentDetails = {
       wompiId: response.data.data.id,
       status: response.data.data.status,
@@ -188,7 +169,6 @@ exports.handleWebhook = async (req, res) => {
     const event = req.body;
     const signature = req.headers['x-signature'];
     
-    // Validar firma del webhook
     const expectedSignature = crypto
       .createHmac('sha256', process.env.WOMPI_EVENT_SECRET)
       .update(JSON.stringify(req.body))
@@ -199,7 +179,6 @@ exports.handleWebhook = async (req, res) => {
       return res.status(403).send('Firma inválida');
     }
 
-    // Procesar evento
     const transaction = event.data.transaction;
     const order = await Order.findOne({ 
       'paymentDetails.reference': transaction.reference 
@@ -209,7 +188,6 @@ exports.handleWebhook = async (req, res) => {
       return res.status(404).send('Orden no encontrada');
     }
 
-    // Actualizar estado del pago
     order.paymentDetails.status = transaction.status;
     order.paymentDetails.processedAt = new Date();
     order.paymentDetails.transactionResponse = transaction;
@@ -247,7 +225,7 @@ exports.checkPaymentStatus = async (req, res) => {
     }
 
     const response = await axios.get(
-      `${process.env.WOMPI_API_URL}/transactions/${transactionId}`, // URL de producción
+      `${process.env.WOMPI_API_URL || 'https://production.wompi.co'}/v1/transactions/${transactionId}`,
       {
         headers: {
           'Authorization': `Bearer ${process.env.WOMPI_PRIVATE_KEY}`

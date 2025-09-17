@@ -11,18 +11,45 @@ import {
   ArrowPathIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  TruckIcon,
+  ShieldCheckIcon,
+  CreditCardIcon
 } from '@heroicons/react/24/outline';
 
+// Paleta de colores elegante y profesional
+const colors = {
+  primary: '#0C4B45',       // Verde oscuro principal
+  primaryDark: '#083D38',   // Verde más oscuro
+  primaryLight: '#83F4E9',  // Verde claro/cian
+  secondary: '#662D8F',     // Violeta oscuro
+  secondaryLight: '#F2A9FD', // Violeta claro/lila
+  accent: '#4CAF50',        // Verde brillante
+  accentDark: '#2E7D32',    // Verde más oscuro
+  backgroundLight: '#F8FCFA', // Fondo claro verde muy suave
+  backgroundLighter: '#EFF8F5', // Fondo más claro verde
+  textDark: '#0C4B45',      // Texto verde oscuro
+  textMedium: '#4A6B57',    // Texto verde medio
+  textLight: '#B5EAD7',     // Texto verde claro
+  error: '#EF5350',         // Rojo para errores
+  success: '#4CAF50',       // Verde para éxito
+  border: '#E0E7ED',        // Borde gris suave
+  cardHover: '#F5FBF8',     // Hover para tarjetas
+};
+
 // Constantes para configuración
+// Constantes para configuración EN PRODUCCIÓN (Completas y Actualizadas)
 const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
-const WOMPI_PUBLIC_KEY = process.env.REACT_APP_WOMPI_PUBLIC_KEY || 'pub_prod_WixDpB6CttsHQtutUQTpYwwiWN54qEEc';
-const WOMPI_INTEGRITY_SECRET = process.env.REACT_APP_WOMPI_INTEGRITY_SECRET || 'prod_integrity_eNbECYglk1XeAtwswDTPxX29Dy9kc4Ag';
-const WOMPI_MERCHANT_ID = process.env.REACT_APP_WOMPI_MERCHANT_ID || '298501';
 
-// Tokens de aceptación de Wompi
-const WOMPI_ACCEPTANCE_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJjb250cmFjdF9pZCI6MjQzLCJwZXJtYWxpbmsiOiJodHRwczovL3dvbXBpLmNvbS9hc3NldHMvZG93bmxvYWRibGUvcmVnbGFtZW50by1Vc3Vhcmlvcy1Db2xvbWJpYS5wZGYiLCJmaWxlX2hhc2giOiJkMWVkMDI3NjhlNDEzZWEyMzFmNzAwMjc0N2Y0N2FhOSIsImppdCI6IjE3NTY4NTY3OTctNjUxNTkiLCJlbWFpbCI6IiIsImV4cCI6MTc1Njg2MDM5N30.-60sRPCKuH01348JLhmzkZyMZ-KrO2fj526Mu8XnAC4';
+// 🔐 CREDENCIALES WOMPI PRODUCCIÓN (Actualizadas)
+const WOMPI_PUBLIC_KEY = process.env.REACT_APP_WOMPI_PUBLIC_KEY || 'pub_prod_PvP6dX3MP46ZIhmXlWJnpJaWw05cQHsa';
+const WOMPI_PRIVATE_KEY = process.env.REACT_APP_WOMPI_PRIVATE_KEY || 'prv_prod_eF0QzPuwamt1u7T1q7nEukZBMAvI62ze';
+const WOMPI_INTEGRITY_SECRET = process.env.REACT_APP_WOMPI_INTEGRITY_SECRET || 'prod_integrity_aQ80uWvGGqBFfyQDa1hfhgBPiYgZLdvT';
+const WOMPI_EVENTS_SECRET = process.env.REACT_APP_WOMPI_EVENTS_SECRET || 'prod_events_toltqgOCuPp5VeSyGxtzYAiP9TJGv9Ge';
 
+// 🎯 TOKEN DE ACEPTACIÓN Y MERCHANT ID
+const WOMPI_ACCEPTANCE_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJjb250cmFjdF9pZCI6NTA3LCJwZXJtYWxpbmsiOiJodHRwczovL3dvbXBpLmNvbS9hc3NldHMvZG93bmxvYWRibGUvcmVnbGFtZW50by1Vc3Vhcmlvcy1Db2xvbWJpYS5wZGYiLCJmaWxlX2hhc2giOiJkYzJkNGUzMDVlNGQzNmFhYjhjYzU3N2I1YTY5Nzg1MSIsImppdCI6IjE3NTc5OTk4MDEtNDc2NjEiLCJlbWFpbCI6IiIsImV4cCI6MTc1ODAwMzQwMX0.kWuTIpCiPX4V_BLNBQBqjjfwdjnMQ3w9OOA8Xm7Vnos';
+const WOMPI_MERCHANT_ID = process.env.REACT_APP_WOMPI_MERCHANT_ID || '261571';
 // BLOQUEO SUPER AGRESIVO DEL SDK WOMPI - REFORZADO
 (function() {
   if (typeof window === 'undefined') return;
@@ -128,30 +155,36 @@ const StatusMessage = ({ type, message, onRetry, onDismiss }) => {
     info: InformationCircleIcon
   };
   
+  const iconColors = {
+    error: 'text-red-500',
+    success: 'text-green-500',
+    info: 'text-blue-500'
+  };
+  
   const styles = {
-    error: 'bg-red-100 border-red-500 text-red-700',
-    success: 'bg-green-100 border-green-500 text-green-700',
-    info: 'bg-blue-100 border-blue-500 text-blue-700'
+    error: 'bg-red-50 border-red-200 text-red-800',
+    success: 'bg-green-50 border-green-200 text-green-800',
+    info: 'bg-blue-50 border-blue-200 text-blue-800'
   };
   
   const IconComponent = icons[type];
   
   return (
-    <div className={`border-l-4 p-4 mb-6 rounded flex items-start ${styles[type]}`}>
-      <IconComponent className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+    <div className={`border rounded-lg p-4 mb-6 flex items-start ${styles[type]}`}>
+      <IconComponent className={`h-5 w-5 mr-3 mt-0.5 flex-shrink-0 ${iconColors[type]}`} />
       <div className="flex-1">
         <p className="font-medium">{message}</p>
         {type === 'error' && (
-          <div className="mt-2 flex space-x-2">
+          <div className="mt-2 flex space-x-3">
             <button 
               onClick={onRetry}
-              className="text-sm underline"
+              className="text-sm font-medium underline hover:no-underline"
             >
               Recargar página
             </button>
             <button 
               onClick={onDismiss}
-              className="text-sm underline"
+              className="text-sm font-medium underline hover:no-underline"
             >
               Intentar nuevamente
             </button>
@@ -165,7 +198,9 @@ const StatusMessage = ({ type, message, onRetry, onDismiss }) => {
 // Componente para el loader
 const Loader = () => (
   <div className="flex justify-center items-center h-screen">
-    <ArrowPathIcon className="animate-spin h-12 w-12 text-blue-500" />
+    <div className="relative">
+      <div className="w-16 h-16 border-4 border-t-4 border-gray-200 border-t-primary rounded-full animate-spin"></div>
+    </div>
   </div>
 );
 
@@ -176,50 +211,54 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem, getImageUrl }) => {
   }, [item._id, onUpdateQuantity]);
 
   return (
-    <li className="p-4 flex flex-col sm:flex-row">
+    <li className="p-5 flex border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors duration-150">
       <div className="flex-shrink-0">
         <img
           src={getImageUrl(item.image)}
           alt={item.name}
-          className="h-24 w-24 object-cover rounded"
+          className="h-20 w-20 object-cover rounded-lg shadow-sm"
           onError={(e) => {
             e.target.src = '/placeholder-product.jpg';
             e.target.onerror = null;
           }}
         />
       </div>
-      <div className="ml-4 flex-1">
+      <div className="ml-4 flex-1 flex flex-col justify-between">
         <div className="flex justify-between">
-          <h3 className="text-lg font-medium">{item.name}</h3>
-          <p className="text-lg font-semibold">
+          <div>
+            <h3 className="text-lg font-medium text-gray-900">{item.name}</h3>
+            <p className="text-gray-600 text-sm">${item.price.toLocaleString()} c/u</p>
+          </div>
+          <p className="text-lg font-semibold text-gray-900">
             ${(item.price * item.quantity).toLocaleString()}
           </p>
         </div>
-        <p className="text-gray-600">${item.price.toLocaleString()} c/u</p>
         
-        <div className="mt-2 flex items-center">
-          <button
-            onClick={() => handleQuantityChange(item.quantity - 1)}
-            disabled={item.quantity <= 1}
-            className="disabled:opacity-50 text-gray-500 hover:text-gray-700 p-1"
-            aria-label="Disminuir cantidad"
-          >
-            <MinusIcon className="h-5 w-5" />
-          </button>
-          <span className="mx-2 text-gray-700 w-8 text-center">
-            {item.quantity}
-          </span>
-          <button 
-            onClick={() => handleQuantityChange(item.quantity + 1)}
-            className="text-gray-500 hover:text-gray-700 p-1"
-            aria-label="Aumentar cantidad"
-          >
-            <PlusIcon className="h-5 w-5" />
-          </button>
+        <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center border border-gray-200 rounded-md">
+            <button
+              onClick={() => handleQuantityChange(item.quantity - 1)}
+              disabled={item.quantity <= 1}
+              className="p-2 text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              aria-label="Disminuir cantidad"
+            >
+              <MinusIcon className="h-4 w-4" />
+            </button>
+            <span className="px-3 py-1 text-gray-700 text-sm font-medium min-w-[2rem] text-center">
+              {item.quantity}
+            </span>
+            <button 
+              onClick={() => handleQuantityChange(item.quantity + 1)}
+              className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+              aria-label="Aumentar cantidad"
+            >
+              <PlusIcon className="h-4 w-4" />
+            </button>
+          </div>
           
           <button
             onClick={() => onRemoveItem(item._id)}
-            className="ml-auto text-red-500 hover:text-red-700 p-1"
+            className="text-red-500 hover:text-red-700 p-2 transition-colors rounded-full hover:bg-red-50"
             aria-label="Eliminar producto"
           >
             <TrashIcon className="h-5 w-5" />
@@ -238,63 +277,66 @@ const ShippingForm = ({ shippingInfo, onChange, errors = {} }) => {
   }, [onChange]);
 
   return (
-    <div className="space-y-4">
-      <h3 className="font-medium">Información de Envío</h3>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Nombre Completo *
-        </label>
-        <input
-          type="text"
-          name="name"
-          value={shippingInfo.name}
-          onChange={handleChange}
-          className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
-            errors.name ? 'border-red-500' : ''
-          }`}
-          required
-        />
-        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+    <div className="space-y-5">
+      <div className="flex items-center">
+        <TruckIcon className="h-5 w-5 text-primary mr-2" />
+        <h3 className="font-semibold text-gray-900">Información de Envío</h3>
       </div>
       
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Correo Electrónico *
-        </label>
-        <input
-          type="email"
-          name="email"
-          value={shippingInfo.email}
-          onChange={handleChange}
-          className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
-            errors.email ? 'border-red-500' : ''
-          }`}
-          required
-        />
-        {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Dirección *
-        </label>
-        <input
-          type="text"
-          name="address"
-          value={shippingInfo.address}
-          onChange={handleChange}
-          className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
-            errors.address ? 'border-red-500' : ''
-          }`}
-          required
-        />
-        {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            Nombre Completo *
+          </label>
+          <input
+            type="text"
+            name="name"
+            value={shippingInfo.name}
+            onChange={handleChange}
+            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition ${
+              errors.name ? 'border-red-500' : 'border-gray-300'
+            }`}
+            required
+          />
+          {errors.name && <p className="text-red-500 text-xs mt-1.5">{errors.name}</p>}
+        </div>
+        
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            Correo Electrónico *
+          </label>
+          <input
+            type="email"
+            name="email"
+            value={shippingInfo.email}
+            onChange={handleChange}
+            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition ${
+              errors.email ? 'border-red-500' : 'border-gray-300'
+            }`}
+            required
+          />
+          {errors.email && <p className="text-red-500 text-xs mt-1.5">{errors.email}</p>}
+        </div>
+        
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            Dirección *
+          </label>
+          <input
+            type="text"
+            name="address"
+            value={shippingInfo.address}
+            onChange={handleChange}
+            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition ${
+              errors.address ? 'border-red-500' : 'border-gray-300'
+            }`}
+            required
+          />
+          {errors.address && <p className="text-red-500 text-xs mt-1.5">{errors.address}</p>}
+        </div>
+        
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Ciudad *
           </label>
           <input
@@ -302,17 +344,17 @@ const ShippingForm = ({ shippingInfo, onChange, errors = {} }) => {
             name="city"
             value={shippingInfo.city}
             onChange={handleChange}
-            className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
-              errors.city ? 'border-red-500' : ''
+            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition ${
+              errors.city ? 'border-red-500' : 'border-gray-300'
             }`}
             required
             placeholder="Bogotá"
           />
-          {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
+          {errors.city && <p className="text-red-500 text-xs mt-1.5">{errors.city}</p>}
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Departamento/Estado *
           </label>
           <input
@@ -320,19 +362,17 @@ const ShippingForm = ({ shippingInfo, onChange, errors = {} }) => {
             name="state"
             value={shippingInfo.state}
             onChange={handleChange}
-            className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
-              errors.state ? 'border-red-500' : ''
+            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition ${
+              errors.state ? 'border-red-500' : 'border-gray-300'
             }`}
             required
             placeholder="Cundinamarca"
           />
-          {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state}</p>}
+          {errors.state && <p className="text-red-500 text-xs mt-1.5">{errors.state}</p>}
         </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Teléfono *
           </label>
           <input
@@ -340,18 +380,18 @@ const ShippingForm = ({ shippingInfo, onChange, errors = {} }) => {
             name="phone"
             value={shippingInfo.phone}
             onChange={handleChange}
-            className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
-              errors.phone ? 'border-red-500' : ''
+            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition ${
+              errors.phone ? 'border-red-500' : 'border-gray-300'
             }`}
             required
             placeholder="3233019836"
           />
-          <p className="text-xs text-gray-500 mt-1">Sin código de país (57)</p>
-          {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+          <p className="text-xs text-gray-500 mt-1.5">Sin código de país (57)</p>
+          {errors.phone && <p className="text-red-500 text-xs mt-1.5">{errors.phone}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Código Postal
           </label>
           <input
@@ -359,22 +399,20 @@ const ShippingForm = ({ shippingInfo, onChange, errors = {} }) => {
             name="postalCode"
             value={shippingInfo.postalCode}
             onChange={handleChange}
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
             placeholder="110111"
           />
         </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Tipo de Documento *
           </label>
           <select
             name="legalIdType"
             value={shippingInfo.legalIdType}
             onChange={handleChange}
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
             required
           >
             <option value="CC">Cédula</option>
@@ -385,7 +423,7 @@ const ShippingForm = ({ shippingInfo, onChange, errors = {} }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Documento de Identidad *
           </label>
           <input
@@ -393,13 +431,13 @@ const ShippingForm = ({ shippingInfo, onChange, errors = {} }) => {
             name="legalId"
             value={shippingInfo.legalId}
             onChange={handleChange}
-            className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
-              errors.legalId ? 'border-red-500' : ''
+            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition ${
+              errors.legalId ? 'border-red-500' : 'border-gray-300'
             }`}
             required
             placeholder="1234567890"
           />
-          {errors.legalId && <p className="text-red-500 text-xs mt-1">{errors.legalId}</p>}
+          {errors.legalId && <p className="text-red-500 text-xs mt-1.5">{errors.legalId}</p>}
         </div>
       </div>
     </div>
@@ -473,7 +511,7 @@ const CartPage = () => {
 
   // Calcular envío y total
   const { shipping, total } = useMemo(() => {
-    const shippingCost = subtotal > 100000 ? 0 : 8000;
+    const shippingCost = subtotal > 100000 ? 0 :0;
     return {
       shipping: shippingCost,
       total: subtotal + shippingCost
@@ -751,118 +789,141 @@ const CartPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Tu Carrito de Compras</h1>
-      
-      {/* Mensaje informativo sobre el método de pago */}
-      <div className="bg-blue-100 border-l-4 border-blue-500 p-4 mb-6 rounded">
-        <div className="flex items-start">
-          <InformationCircleIcon className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0 text-blue-500" />
-          <div>
-            <p className="font-medium text-blue-700">Método de Pago Seguro</p>
-            <p className="text-blue-600 text-sm mt-1">
-              Estás utilizando la integración directa con Wompi. Serás redirigido a su plataforma segura para completar el pago.
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      {error && (
-        <StatusMessage 
-          type="error" 
-          message={error} 
-          onRetry={handleReload}
-          onDismiss={handleDismissError}
-        />
-      )}
-
-      {success && (
-        <StatusMessage 
-          type="success" 
-          message={success} 
-        />
-      )}
-
-      <div className="grid md:grid-cols-3 gap-8">
-        <div className="md:col-span-2">
-          {cartItems.length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-6 text-center">
-              <p className="text-gray-500 mb-4">No hay productos en tu carrito</p>
-              <button
-                onClick={() => navigate('/products')}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-              >
-                Ver Productos
-              </button>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <ul className="divide-y divide-gray-200">
-                {cartItems.map(item => (
-                  <CartItem 
-                    key={item._id} 
-                    item={item} 
-                    onUpdateQuantity={handleUpdateQuantity}
-                    onRemoveItem={handleRemoveItem}
-                    getImageUrl={getImageUrl}
-                  />
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-
-        <div>
-          <div className="bg-white rounded-lg shadow p-6 sticky top-4">
-            <h2 className="text-xl font-semibold mb-4">Resumen del Pedido</h2>
-            
-            <div className="space-y-3 mb-6">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>${subtotal.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Envío</span>
-                <span>{shipping === 0 ? 'Gratis' : `$${shipping.toLocaleString()}`}</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                <span>Total</span>
-                <span>${total.toLocaleString()}</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleCheckout} className="space-y-4">
-              <ShippingForm 
-                shippingInfo={shippingInfo} 
-                onChange={handleInputChange}
-                errors={formErrors}
-              />
-
-              <button
-                type="submit"
-                disabled={processing || cartItems.length === 0 || !WOMPI_PUBLIC_KEY || !WOMPI_INTEGRITY_SECRET}
-                className={`w-full py-3 px-4 rounded-lg font-medium text-white mt-4 transition-colors ${
-                  processing || cartItems.length === 0 || !WOMPI_PUBLIC_KEY || !WOMPI_INTEGRITY_SECRET
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700'
-                } flex items-center justify-center`}
-              >
-                {processing ? (
-                  <>
-                    <ArrowPathIcon className="animate-spin h-5 w-5 mr-2" />
-                    Procesando...
-                  </>
-                ) : (
-                  'Pagar con Wompi'
-                )}
-              </button>
-
-              {(!WOMPI_PUBLIC_KEY || !WOMPI_INTEGRITY_SECRET) && (
-                <p className="text-red-500 text-sm mt-2">
-                  Error de configuración: Variables de Wompi no están definidas correctamente
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto lg:max-w-none">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Tu Carrito de Compras</h1>
+          <p className="text-gray-600 mb-8">Revisa y completa tu pedido</p>
+          
+          {/* Mensaje informativo sobre el método de pago */}
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6">
+            <div className="flex items-start">
+              <InformationCircleIcon className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0 text-blue-500" />
+              <div>
+                <p className="font-medium text-blue-800">Método de Pago Seguro</p>
+                <p className="text-blue-700 text-sm mt-1">
+                  Estás utilizando la integración directa con Wompi. Serás redirigido a su plataforma segura para completar el pago.
                 </p>
+              </div>
+            </div>
+          </div>
+          
+          {error && (
+            <StatusMessage 
+              type="error" 
+              message={error} 
+              onRetry={handleReload}
+              onDismiss={handleDismissError}
+            />
+          )}
+
+          {success && (
+            <StatusMessage 
+              type="success" 
+              message={success} 
+            />
+          )}
+
+          <div className="lg:grid lg:grid-cols-12 lg:gap-x-12 lg:items-start">
+            <div className="lg:col-span-7">
+              {cartItems.length === 0 ? (
+                <div className="bg-white rounded-xl shadow-sm p-8 text-center border border-gray-100">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 mb-4">
+                    <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-500 mb-4">No hay productos en tu carrito</p>
+                  <button
+                    onClick={() => navigate('/products')}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primaryDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+                  >
+                    Ver Productos
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+                  <div className="px-5 py-4 border-b border-gray-100">
+                    <h2 className="text-lg font-medium text-gray-900">Productos ({cartItems.length})</h2>
+                  </div>
+                  <ul className="divide-y divide-gray-100">
+                    {cartItems.map(item => (
+                      <CartItem 
+                        key={item._id} 
+                        item={item} 
+                        onUpdateQuantity={handleUpdateQuantity}
+                        onRemoveItem={handleRemoveItem}
+                        getImageUrl={getImageUrl}
+                      />
+                    ))}
+                  </ul>
+                </div>
               )}
-            </form>
+            </div>
+
+            <div className="mt-10 lg:mt-0 lg:col-span-5">
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 sticky top-4">
+                <h2 className="text-lg font-medium text-gray-900 mb-6">Resumen del Pedido</h2>
+                
+                <div className="space-y-4 mb-6">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Subtotal</span>
+                    <span className="font-medium">${subtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Envío</span>
+                    <span className="font-medium">{shipping === 0 ? 'Gratis' : `$${shipping.toLocaleString()}`}</span>
+                  </div>
+                  <div className="flex justify-between pt-4 border-t border-gray-200">
+                    <span className="text-lg font-semibold text-gray-900">Total</span>
+                    <span className="text-lg font-semibold text-gray-900">${total.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <form onSubmit={handleCheckout} className="space-y-6">
+                  <ShippingForm 
+                    shippingInfo={shippingInfo} 
+                    onChange={handleInputChange}
+                    errors={formErrors}
+                  />
+
+                  <div className="pt-4 border-t border-gray-200">
+                    <button
+                    type="submit"
+                    disabled={processing || cartItems.length === 0 || !WOMPI_PUBLIC_KEY || !WOMPI_INTEGRITY_SECRET}
+                    className={`w-full py-3 px-4 rounded-xl font-medium text-white transition-colors flex items-center justify-center ${
+                      processing || cartItems.length === 0 || !WOMPI_PUBLIC_KEY || !WOMPI_INTEGRITY_SECRET
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-green-600 hover:bg-green-700 shadow-sm hover:shadow-md'
+                    }`}
+                    >
+                      {processing ? (
+                        <>
+                          <ArrowPathIcon className="animate-spin h-5 w-5 mr-2" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCardIcon className="h-5 w-5 mr-2" />
+                          Pagar con Wompi
+                        </>
+                      )}
+                    </button>
+
+                    {(!WOMPI_PUBLIC_KEY || !WOMPI_INTEGRITY_SECRET) && (
+                      <p className="text-red-500 text-sm mt-2 text-center">
+                        Error de configuración: Variables de Wompi no están definidas correctamente
+                      </p>
+                    )}
+
+                    <div className="mt-4 flex items-center justify-center text-xs text-gray-500">
+                      <ShieldCheckIcon className="h-4 w-4 mr-1 text-green-500" />
+                      <span>Pago seguro con encriptación SSL</span>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
       </div>

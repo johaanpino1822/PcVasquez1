@@ -12,7 +12,8 @@ import {
   FiLoader,
   FiChevronLeft,
   FiChevronRight,
-  FiZoomIn
+  FiZoomIn,
+  FiSearch
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
@@ -25,23 +26,25 @@ const ProductList = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showFullscreenImage, setShowFullscreenImage] = useState(false);
   const [currentProductImages, setCurrentProductImages] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage] = useState(8);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('/api/products');
+        const response = await axios.get('http://localhost:5000/api/products');
         
-        if (response.data?.success) {
-          const productsWithImages = response.data.data.map(product => ({
+        if (response.data) {
+          const productsWithImages = response.data.map(product => ({
             ...product,
-            allImages: [
-              product.image ? getImageUrl(product.image) : '/placeholder.jpg',
-              ...(product.additionalImages?.map(img => getImageUrl(img)) || [])
-            ]
+            allImages: product.images || ['/placeholder.jpg']
           }));
           setProducts(productsWithImages);
+          setFilteredProducts(productsWithImages);
           setError(null);
         } else {
           throw new Error('Formato de respuesta inesperado');
@@ -57,10 +60,22 @@ const ProductList = () => {
     fetchProducts();
   }, []);
 
+  // Filtrar productos basado en el término de búsqueda
+  useEffect(() => {
+    const filtered = products.filter(product => 
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.brand.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredProducts(filtered);
+    setCurrentPage(1); // Resetear a la primera página al buscar
+  }, [searchTerm, products]);
+
   const getImageUrl = (imagePath) => {
     if (!imagePath) return '/placeholder.jpg';
     if (imagePath.startsWith('http')) return imagePath;
-    return `/uploads/products/${imagePath}`;
+    return `http://localhost:5000/uploads/${imagePath}`;
   };
 
   const handleAddProduct = () => {
@@ -75,14 +90,13 @@ const ProductList = () => {
     if (!window.confirm('¿Está seguro que desea eliminar este producto permanentemente?')) return;
     
     try {
-      await axios.delete(`/api/products/${id}`);
+      await axios.delete(`http://localhost:5000/api/products/${id}`);
       setProducts(products.filter(product => product._id !== id));
       toast.success('Producto eliminado correctamente', {
         position: "top-right",
         autoClose: 2000,
         hideProgressBar: true,
-        closeButton: false,
-        className: "bg-white border-l-4 border-[#662D8F] shadow-lg"
+        className: "border-l-4 border-green-500 bg-white shadow-lg"
       });
     } catch (err) {
       console.error('Error al eliminar producto:', err);
@@ -90,7 +104,7 @@ const ProductList = () => {
         position: "top-right",
         autoClose: 2000,
         hideProgressBar: true,
-        className: "bg-white border-l-4 border-red-500 shadow-lg"
+        className: "border-l-4 border-red-500 bg-white shadow-lg"
       });
     }
   };
@@ -112,6 +126,17 @@ const ProductList = () => {
       (prev - 1 + currentProductImages.length) % currentProductImages.length
     );
   };
+
+  // Obtener productos actuales para la página
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
+  // Cambiar página
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Calcular número total de páginas
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
   if (loading) {
     return (
@@ -166,110 +191,183 @@ const ProductList = () => {
           </motion.button>
         </div>
 
-        {/* Product Grid */}
-        {products.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <AnimatePresence>
-              {products.map((product) => (
-                <motion.div
-                  key={product._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
-                  className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-                >
-                  {/* Image Gallery */}
-                  <div className="relative h-48 bg-gradient-to-br from-[#0C4B45]/10 to-[#83F4E9]/10">
-                    {product.allImages.length > 0 ? (
-                      <>
-                        <img
-                          src={product.allImages[0]}
-                          alt={product.name}
-                          className="w-full h-full object-contain cursor-pointer p-4"
-                          onClick={() => openImageGallery(product.allImages, 0)}
-                        />
-                        {product.allImages.length > 1 && (
-                          <div className="absolute bottom-2 right-2 bg-white/80 rounded-full p-1 shadow-sm">
-                            <span className="text-xs font-medium text-[#662D8F] px-2">
-                              +{product.allImages.length - 1}
-                            </span>
-                          </div>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openImageGallery(product.allImages, 0);
-                          }}
-                          className="absolute top-2 right-2 bg-white/80 hover:bg-white p-2 rounded-full shadow-md"
-                        >
-                          <FiZoomIn className="text-[#662D8F]" size={16} />
-                        </button>
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <FiImage size={48} />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Product Info */}
-                  <div className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 
-                        className="font-semibold text-[#0C4B45] truncate"
-                        title={product.name}
-                      >
-                        {product.name}
-                      </h3>
-                      <div className="flex items-center text-[#662D8F] font-bold">
-                        <FiDollarSign className="mr-1" size={14} />
-                        <span>{product.price?.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                    </div>
-
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2 h-12">
-                      {product.description || 'Sin descripción'}
-                    </p>
-
-                    <div className="flex justify-between items-center">
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        product.stock > 0 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {product.stock > 0 ? `${product.stock} en stock` : 'Agotado'}
-                      </span>
-
-                      <div className="flex space-x-2">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleEditProduct(product._id)}
-                          className="text-[#0C4B45] hover:text-[#083D38] p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                        >
-                          <FiEdit size={16} />
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleDeleteProduct(product._id)}
-                          className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors"
-                        >
-                          <FiTrash2 size={16} />
-                        </motion.button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+        {/* Barra de búsqueda */}
+        <div className="mb-6">
+          <div className="relative max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FiSearch className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar productos por nombre, categoría o marca..."
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#662D8F] focus:border-transparent"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
+          <p className="text-sm text-gray-500 mt-2">
+            {filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''} encontrado{filteredProducts.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+
+        {/* Product Grid */}
+        {filteredProducts.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <AnimatePresence>
+                {currentProducts.map((product) => (
+                  <motion.div
+                    key={product._id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.3 }}
+                    className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                  >
+                    {/* Image Gallery */}
+                    <div className="relative h-48 bg-gradient-to-br from-[#0C4B45]/10 to-[#83F4E9]/10">
+                      {product.allImages && product.allImages.length > 0 ? (
+                        <>
+                          <img
+                            src={getImageUrl(product.allImages[0])}
+                            alt={product.name}
+                            className="w-full h-full object-contain cursor-pointer p-4"
+                            onClick={() => openImageGallery(product.allImages, 0)}
+                          />
+                          {product.allImages.length > 1 && (
+                            <div className="absolute bottom-2 right-2 bg-white/80 rounded-full p-1 shadow-sm">
+                              <span className="text-xs font-medium text-[#662D8F] px-2">
+                                +{product.allImages.length - 1}
+                              </span>
+                            </div>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openImageGallery(product.allImages, 0);
+                            }}
+                            className="absolute top-2 right-2 bg-white/80 hover:bg-white p-2 rounded-full shadow-md"
+                          >
+                            <FiZoomIn className="text-[#662D8F]" size={16} />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <FiImage size={48} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Product Info */}
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 
+                          className="font-semibold text-[#0C4B45] truncate"
+                          title={product.name}
+                        >
+                          {product.name}
+                        </h3>
+                        <div className="flex items-center text-[#662D8F] font-bold">
+                          <FiDollarSign className="mr-1" size={14} />
+                          <span>{product.price?.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center mb-2">
+                        <span className="text-xs bg-[#0C4B45]/10 text-[#0C4B45] px-2 py-1 rounded mr-2">
+                          {product.category}
+                        </span>
+                        <span className="text-xs bg-[#662D8F]/10 text-[#662D8F] px-2 py-1 rounded">
+                          {product.brand}
+                        </span>
+                      </div>
+
+                      <p className="text-gray-600 text-sm mb-3 line-clamp-2 h-12">
+                        {product.description || 'Sin descripción'}
+                      </p>
+
+                      <div className="flex justify-between items-center">
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          product.stock > 0 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {product.stock > 0 ? `${product.stock} en stock` : 'Agotado'}
+                        </span>
+
+                        <div className="flex space-x-2">
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleEditProduct(product._id)}
+                            className="text-[#0C4B45] hover:text-[#083D38] p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                            title="Editar producto"
+                          >
+                            <FiEdit size={16} />
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleDeleteProduct(product._id)}
+                            className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                            title="Eliminar producto"
+                          >
+                            <FiTrash2 size={16} />
+                          </motion.button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+
+            {/* Paginación */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-8">
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => paginate(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-lg bg-white border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  >
+                    <FiChevronLeft />
+                  </button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => paginate(page)}
+                      className={`w-10 h-10 rounded-lg border ${
+                        currentPage === page 
+                          ? 'bg-[#662D8F] text-white border-[#662D8F]' 
+                          : 'bg-white border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  
+                  <button
+                    onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-lg bg-white border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  >
+                    <FiChevronRight />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="bg-white rounded-xl shadow-md p-8 text-center">
             <FiPackage size={48} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-medium text-[#0C4B45] mb-2">No hay productos registrados</h3>
-            <p className="text-gray-600 mb-6">Comienza agregando tu primer producto</p>
+            <h3 className="text-xl font-medium text-[#0C4B45] mb-2">
+              {searchTerm ? 'No se encontraron productos' : 'No hay productos registrados'}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {searchTerm ? 'Intenta con otros términos de búsqueda' : 'Comienza agregando tu primer producto'}
+            </p>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -307,7 +405,7 @@ const ProductList = () => {
               
               <div className="relative h-full w-full flex items-center justify-center">
                 <img
-                  src={currentProductImages[selectedImageIndex]}
+                  src={getImageUrl(currentProductImages[selectedImageIndex])}
                   alt="Producto"
                   className="max-h-full max-w-full object-contain"
                 />

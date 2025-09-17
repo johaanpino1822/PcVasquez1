@@ -4,8 +4,25 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const retry = require('async-retry');
 const path = require('path');
+const helmet = require('helmet');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
+
+// === CONFIGURACIÓN CRÍTICA: Trust proxy ===
+app.set('trust proxy', 1);
+
+// === Seguridad con Helmet ===
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
+// === Compresión ===
+app.use(compression());
 
 // === Conexión a MongoDB con reintento ===
 const connectToMongoDB = async () => {
@@ -15,9 +32,6 @@ const connectToMongoDB = async () => {
         await mongoose.connect(process.env.MONGODB_URI, {
           serverSelectionTimeoutMS: 30000,
           socketTimeoutMS: 45000,
-          family: 4,
-          retryWrites: true,
-          w: 'majority'
         });
         console.log('✅ Conectado a MongoDB');
       },
@@ -25,7 +39,7 @@ const connectToMongoDB = async () => {
         retries: 5,
         factor: 2,
         minTimeout: 1000,
-        maxTimeout: 10000
+        maxTimeout: 10000,
       }
     );
   } catch (error) {
@@ -45,31 +59,65 @@ connectToMongoDB();
 const corsOptions = {
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
-  optionsSuccessStatus: 200
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'x-auth-token',
+    'x-event-checksum', // ✅ header real que manda Wompi
+    'x-event-type',
+    'x-event-id',
+  ],
+  optionsSuccessStatus: 200,
 };
-
 app.use(cors(corsOptions));
 
-// === Middlewares ===
-app.use(express.json({
-  limit: '10mb',
-  verify: (req, res, buf) => {
-    req.rawBody = buf;
-  }
-}));
+// === Rate Limiting (excluye webhooks) ===
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  skip: (req) =>
+    req.originalUrl.startsWith('/api/webhook') ||
+    req.originalUrl.startsWith('/api/orders/wompi-webhook'),
+  message: {
+    error: 'Demasiadas solicitudes desde esta IP',
+    code: 'RATE_LIMIT_EXCEEDED',
+  },
+});
+app.use(limiter);
 
-app.use(express.urlencoded({
-  extended: true,
-  limit: '10mb',
-  parameterLimit: 10000
-}));
+// ✅ Middleware ESPECIAL para Webhook de Wompi (raw body)
+app.use((req, res, next) => {
+  if (req.method === 'POST' && req.originalUrl.startsWith('/api/orders/wompi-webhook')) {
+    let data = [];
+    req.on('data', (chunk) => data.push(chunk));
+    req.on('end', () => {
+      req.rawBody = Buffer.concat(data);
+      console.log('📩 Raw body recibido - length:', req.rawBody.length);
+      next();
+    });
+    req.on('error', (err) => {
+      console.error('❌ Error leyendo raw body:', err);
+      res.status(500).json({ success: false, error: 'Error leyendo raw body' });
+    });
+  } else {
+    next();
+  }
+});
 
 // ✅ Servir archivos estáticos desde /uploads/products
-app.use('/uploads/products', express.static(path.join(__dirname, 'uploads', 'products')));
+app.use(
+  '/uploads/products',
+  express.static(path.join(__dirname, 'uploads', 'products'))
+);
 
-// === Cargar rutas dinámicas de forma segura ===
+// === Middlewares generales (JSON / URLENCODED) ===
+app.use(express.json({ limit: '10mb' }));
+app.use(
+  express.urlencoded({ extended: true, limit: '10mb', parameterLimit: 10000 })
+);
+
+// === Cargar rutas dinámicas ===
 const loadRoute = (routePath) => {
   try {
     return require(routePath);
@@ -83,17 +131,16 @@ const productRoutes = loadRoute('./routes/products.routes');
 const orderRoutes = loadRoute('./routes/orders.routes');
 const userRoutes = loadRoute('./routes/users.routes');
 const adminRoutes = loadRoute('./routes/admin.routes');
-const wompiRoutes = loadRoute('./routes/wompi.routes');
 
 if (productRoutes) app.use('/api/products', productRoutes);
 if (orderRoutes) app.use('/api/orders', orderRoutes);
 if (userRoutes) app.use('/api/users', userRoutes);
 if (adminRoutes) app.use('/api/admin', adminRoutes);
-if (wompiRoutes) app.use('/api/wompi', wompiRoutes);
 
 // === Ruta de salud ===
 app.get('/health', async (req, res) => {
-  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  const dbStatus =
+    mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
   const memoryUsage = process.memoryUsage();
 
   res.status(200).json({
@@ -103,8 +150,17 @@ app.get('/health', async (req, res) => {
     memory: {
       rss: `${Math.round(memoryUsage.rss / 1024 / 1024)} MB`,
       heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)} MB`,
-      heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)} MB`
-    }
+      heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)} MB`,
+    },
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// === Ruta de prueba para webhook ===
+app.get('/api/test-webhook', (req, res) => {
+  res.json({
+    message: 'Webhook endpoint is accessible',
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -114,15 +170,15 @@ app.use((err, req, res, next) => {
 
   const errorResponse = {
     success: false,
-    message: err.message || 'Error interno del servidor'
+    message: err.message || 'Error interno del servidor',
   };
 
   switch (err.name) {
     case 'ValidationError':
       res.status(400);
-      errorResponse.errors = Object.keys(err.errors).map(key => ({
+      errorResponse.errors = Object.keys(err.errors).map((key) => ({
         field: key,
-        message: err.errors[key].message
+        message: err.errors[key].message,
       }));
       break;
     case 'UnauthorizedError':
@@ -144,6 +200,27 @@ app.use((err, req, res, next) => {
   }
 
   res.json(errorResponse);
+});
+
+// === Ruta para manejar 404 ===
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Ruta ${req.originalUrl} no encontrada`,
+  });
+});
+
+// === Iniciar servidor ===
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`📊 Entorno: ${process.env.NODE_ENV || 'development'}`);
+  console.log(
+    `🌐 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`
+  );
+  console.log(
+    `🔗 Webhook Wompi: http://localhost:${PORT}/api/orders/wompi-webhook`
+  );
 });
 
 module.exports = app;

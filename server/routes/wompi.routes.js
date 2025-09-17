@@ -3,7 +3,6 @@ const axios = require('axios');
 const crypto = require('crypto');
 const router = express.Router();
 
-// Función mejorada para obtener el token de aceptación con reintentos (PRODUCCIÓN)
 async function getAcceptanceToken(retries = 3) {
   for (let i = 0; i < retries; i++) {
     try {
@@ -26,7 +25,6 @@ async function getAcceptanceToken(retries = 3) {
   throw new Error('No se pudo obtener el token de aceptación después de varios intentos');
 }
 
-// Función para generar la firma de integridad
 function generateSignature(reference, amount, currency) {
   const secret = process.env.WOMPI_INTEGRITY_SECRET;
   if (!secret) {
@@ -36,7 +34,6 @@ function generateSignature(reference, amount, currency) {
   return crypto.createHash('sha256').update(data).digest('hex');
 }
 
-// Validación exhaustiva del payload
 function validateWompiPayload(payload) {
   const errors = [];
   const requiredFields = [
@@ -47,14 +44,12 @@ function validateWompiPayload(payload) {
     'reference'
   ];
 
-  // Validación de campos requeridos
   requiredFields.forEach(field => {
     if (!payload[field]) {
       errors.push(`El campo ${field} es requerido`);
     }
   });
 
-  // Validación de tipos y formatos
   if (payload.amount_in_cents) {
     if (typeof payload.amount_in_cents !== 'number' || payload.amount_in_cents < 1000) {
       errors.push('El monto mínimo es $10 COP (1000 centavos)');
@@ -69,7 +64,6 @@ function validateWompiPayload(payload) {
     errors.push('El email proporcionado no es válido');
   }
 
-  // Validación de payment_method
   if (payload.payment_method) {
     if (typeof payload.payment_method !== 'object') {
       errors.push('El método de pago no tiene el formato correcto');
@@ -86,12 +80,10 @@ function validateWompiPayload(payload) {
     }
   }
 
-  // Validación de reference
   if (payload.reference && (typeof payload.reference !== 'string' || payload.reference.length < 10)) {
     errors.push('La referencia debe tener al menos 10 caracteres');
   }
 
-  // Validación de customer_data
   if (payload.customer_data) {
     if (typeof payload.customer_data !== 'object') {
       errors.push('Los datos del cliente no tienen el formato correcto');
@@ -114,12 +106,10 @@ function validateWompiPayload(payload) {
   return errors;
 }
 
-// Ruta para crear transacción
 router.post('/create-transaction', async (req, res) => {
   try {
     const payload = req.body;
 
-    // Validación exhaustiva del payload
     const validationErrors = validateWompiPayload(payload);
     if (validationErrors.length > 0) {
       return res.status(400).json({
@@ -129,7 +119,6 @@ router.post('/create-transaction', async (req, res) => {
       });
     }
 
-    // Obtener acceptance token dinámicamente con manejo de errores
     let acceptance_token;
     try {
       acceptance_token = await getAcceptanceToken();
@@ -142,14 +131,12 @@ router.post('/create-transaction', async (req, res) => {
       });
     }
 
-    // Generar firma de integridad
     const signature = generateSignature(
       payload.reference,
       payload.amount_in_cents,
       payload.currency
     );
 
-    // Construcción del payload para Wompi
     const wompiPayload = {
       amount_in_cents: Math.round(payload.amount_in_cents),
       currency: payload.currency,
@@ -170,15 +157,13 @@ router.post('/create-transaction', async (req, res) => {
         legal_id: payload.customer_data.legal_id.toString()
       },
       acceptance_token: acceptance_token,
-      signature: signature // Campo de firma añadido
+      signature: signature
     };
 
-    // Asegurar formato correcto del teléfono (57 + 10 dígitos)
     if (!wompiPayload.customer_data.phone_number.startsWith('57')) {
       wompiPayload.customer_data.phone_number = '57' + wompiPayload.customer_data.phone_number;
     }
 
-    // Configuración de la petición a Wompi
     const config = {
       headers: {
         'Authorization': `Bearer ${process.env.WOMPI_PRIVATE_KEY}`,
@@ -187,19 +172,16 @@ router.post('/create-transaction', async (req, res) => {
       timeout: 15000
     };
 
-    // Envío a Wompi (PRODUCCIÓN)
     const response = await axios.post(
       'https://production.wompi.co/v1/transactions',
       wompiPayload,
       config
     );
 
-    // Validación de la respuesta de Wompi
     if (!response.data?.data?.id) {
       throw new Error('Respuesta inválida de Wompi');
     }
 
-    // Respuesta exitosa
     return res.json({
       ok: true,
       data: response.data.data
@@ -208,7 +190,6 @@ router.post('/create-transaction', async (req, res) => {
   } catch (error) {
     console.error('Error en Wompi:', error.message);
     
-    // Manejo específico de errores 422 (Unprocessable Entity)
     if (error.response?.status === 422) {
       return res.status(422).json({
         ok: false,
@@ -217,7 +198,6 @@ router.post('/create-transaction', async (req, res) => {
       });
     }
 
-    // Manejo genérico de errores
     return res.status(error.response?.status || 500).json({
       ok: false,
       error: error.message || 'Error al procesar el pago'

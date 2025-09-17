@@ -11,8 +11,8 @@ import CheckoutPage from './pages/CheckoutPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import PaymentProcessingPage from './pages/PaymentProcessingPage'; // Nueva página
-import PaymentResultPage from './pages/PaymentResultPage'; // Nueva página
+
+import PaymentResultPage from './pages/PaymentResultPage';
 
 // Componentes
 import Navbar from './components/Navbar';
@@ -23,8 +23,8 @@ import AdminRoute from './components/AdminRoute';
 import AdminLayout from './admin/AdminLayout';
 import Dashboard from './admin/Dashboard';
 import AdminProducts from './admin/Products';
-import ProductForm from './admin/ProductForm';
 import ProductCreate from './admin/ProductCreate';
+import ProductEdit from './admin/ProductEdit'; // Nuevo componente para edición
 import UserList from './admin/UserList';
 import AdminOrders from './admin/AdminOrders';
 
@@ -61,7 +61,7 @@ function App() {
                 } 
               />
               <Route path="/order/:id" element={<OrderConfirmationPage />} />
-              <Route path="/payment/processing" element={<PaymentProcessingPage />} />
+              
               <Route path="/payment/result" element={<PaymentResultPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
@@ -82,7 +82,7 @@ function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="products" element={<AdminProducts />} />
               <Route path="products/new" element={<ProductCreate />} />
-              <Route path="products/edit/:id" element={<ProductForm />} />
+              <Route path="products/edit/:id" element={<ProductEdit />} /> {/* Cambiado a ProductEdit */}
               <Route path="users" element={<UserList />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="*" element={<Navigate to="dashboard" replace />} />

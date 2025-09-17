@@ -51,6 +51,25 @@ const LoginPage = () => {
     }
   }, [authError]);
 
+  // Efecto para redirigir después de un login exitoso
+  useEffect(() => {
+    if (user) {
+      setSuccess(true);
+      
+      // Pequeño delay para permitir que la UI muestre el mensaje de éxito
+      const timer = setTimeout(() => {
+        if (user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          const from = location.state?.from?.pathname || '/products';
+          navigate(from, { replace: true });
+        }
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user, navigate, location]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -94,23 +113,12 @@ const LoginPage = () => {
         isAdmin: isAdminLogin
       };
 
-      const loginSuccess = await login(credentials);
-
-      if (loginSuccess) {
-        setSuccess(true);
-        if (isAdmin) {
-          navigate('/admin/dashboard');
-        } else {
-          const from = location.state?.from?.pathname || '/';
-          navigate(from, { replace: true });
-        }
-      } else {
-        setError('Credenciales incorrectas. Por favor verifique sus datos.');
-      }
+      await login(credentials);
+      // La redirección ahora se maneja en el useEffect que observa el cambio en 'user'
+      
     } catch (err) {
       console.error('Error al iniciar sesión:', err);
       setError('Ocurrió un error. Por favor intente nuevamente.');
-    } finally {
       setLoading(false);
     }
   };

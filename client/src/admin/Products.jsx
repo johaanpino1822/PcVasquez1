@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { 
   FiPlus, 
-  FiEdit, 
+  FiEdit,
   FiTrash2, 
   FiImage,
   FiDollarSign,
@@ -17,6 +17,8 @@ import {
   FiArchive,
   FiRotateCcw
 } from 'react-icons/fi';
+
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
