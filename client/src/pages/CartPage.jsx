@@ -19,29 +19,28 @@ import {
 
 // Paleta de colores elegante y profesional
 const colors = {
-  primary: '#0C4B45',       // Verde oscuro principal
-  primaryDark: '#083D38',   // Verde más oscuro
-  primaryLight: '#83F4E9',  // Verde claro/cian
-  secondary: '#662D8F',     // Violeta oscuro
-  secondaryLight: '#F2A9FD', // Violeta claro/lila
-  accent: '#4CAF50',        // Verde brillante
-  accentDark: '#2E7D32',    // Verde más oscuro
-  backgroundLight: '#F8FCFA', // Fondo claro verde muy suave
-  backgroundLighter: '#EFF8F5', // Fondo más claro verde
-  textDark: '#0C4B45',      // Texto verde oscuro
-  textMedium: '#4A6B57',    // Texto verde medio
-  textLight: '#B5EAD7',     // Texto verde claro
-  error: '#EF5350',         // Rojo para errores
-  success: '#4CAF50',       // Verde para éxito
-  border: '#E0E7ED',        // Borde gris suave
-  cardHover: '#F5FBF8',     // Hover para tarjetas
+  primary: '#0C4B45',
+  primaryDark: '#083D38',
+  primaryLight: '#83F4E9',
+  secondary: '#662D8F',
+  secondaryLight: '#F2A9FD',
+  accent: '#4CAF50',
+  accentDark: '#2E7D32',
+  backgroundLight: '#F8FCFA',
+  backgroundLighter: '#EFF8F5',
+  textDark: '#0C4B45',
+  textMedium: '#4A6B57',
+  textLight: '#B5EAD7',
+  error: '#EF5350',
+  success: '#4CAF50',
+  border: '#E0E7ED',
+  cardHover: '#F5FBF8',
 };
 
-// Constantes para configuración
-// Constantes para configuración EN PRODUCCIÓN (Completas y Actualizadas)
+// Constantes para configuración EN PRODUCCIÓN
 const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
-// 🔐 CREDENCIALES WOMPI PRODUCCIÓN (Actualizadas)
+// 🔐 CREDENCIALES WOMPI PRODUCCIÓN
 const WOMPI_PUBLIC_KEY = process.env.REACT_APP_WOMPI_PUBLIC_KEY || 'pub_prod_PvP6dX3MP46ZIhmXlWJnpJaWw05cQHsa';
 const WOMPI_PRIVATE_KEY = process.env.REACT_APP_WOMPI_PRIVATE_KEY || 'prv_prod_eF0QzPuwamt1u7T1q7nEukZBMAvI62ze';
 const WOMPI_INTEGRITY_SECRET = process.env.REACT_APP_WOMPI_INTEGRITY_SECRET || 'prod_integrity_aQ80uWvGGqBFfyQDa1hfhgBPiYgZLdvT';
@@ -50,13 +49,13 @@ const WOMPI_EVENTS_SECRET = process.env.REACT_APP_WOMPI_EVENTS_SECRET || 'prod_e
 // 🎯 TOKEN DE ACEPTACIÓN Y MERCHANT ID
 const WOMPI_ACCEPTANCE_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJjb250cmFjdF9pZCI6NTA3LCJwZXJtYWxpbmsiOiJodHRwczovL3dvbXBpLmNvbS9hc3NldHMvZG93bmxvYWRibGUvcmVnbGFtZW50by1Vc3Vhcmlvcy1Db2xvbWJpYS5wZGYiLCJmaWxlX2hhc2giOiJkYzJkNGUzMDVlNGQzNmFhYjhjYzU3N2I1YTY5Nzg1MSIsImppdCI6IjE3NTc5OTk4MDEtNDc2NjEiLCJlbWFpbCI6IiIsImV4cCI6MTc1ODAwMzQwMX0.kWuTIpCiPX4V_BLNBQBqjjfwdjnMQ3w9OOA8Xm7Vnos';
 const WOMPI_MERCHANT_ID = process.env.REACT_APP_WOMPI_MERCHANT_ID || '261571';
-// BLOQUEO SUPER AGRESIVO DEL SDK WOMPI - REFORZADO
+
+// BLOQUEO SUPER AGRESIVO DEL SDK WOMPI
 (function() {
   if (typeof window === 'undefined') return;
   
   console.log('🔧 Iniciando bloqueo agresivo del SDK Wompi...');
   
-  // 1. Eliminar scripts existentes de Wompi de forma más agresiva
   const removeWompiScripts = () => {
     const scripts = document.querySelectorAll('script');
     scripts.forEach(script => {
@@ -74,7 +73,6 @@ const WOMPI_MERCHANT_ID = process.env.REACT_APP_WOMPI_MERCHANT_ID || '261571';
     });
   };
   
-  // 2. Bloquear globales de Wompi de forma más completa
   const blockWompiGlobals = () => {
     const globalProps = ['$wompi', 'Wompi', 'wompi', '__WOMPI__', 'wompiCheckout'];
     
@@ -88,13 +86,10 @@ const WOMPI_MERCHANT_ID = process.env.REACT_APP_WOMPI_MERCHANT_ID || '261571';
     });
   };
   
-  // 3. Bloquear dynamic imports y appendChild de forma más robusta
   const blockDynamicLoading = () => {
-    // Guardar originales
     const originalAppendChild = Element.prototype.appendChild;
     const originalCreateElement = Document.prototype.createElement;
     
-    // Override appendChild
     Element.prototype.appendChild = function(node) {
       if (node.src && (
         node.src.includes('wompi') || 
@@ -110,7 +105,6 @@ const WOMPI_MERCHANT_ID = process.env.REACT_APP_WOMPI_MERCHANT_ID || '261571';
       return originalAppendChild.call(this, node);
     };
     
-    // Override createElement
     Document.prototype.createElement = function(tagName, options) {
       const element = originalCreateElement.call(this, tagName, options);
       
@@ -136,12 +130,10 @@ const WOMPI_MERCHANT_ID = process.env.REACT_APP_WOMPI_MERCHANT_ID || '261571';
     };
   };
   
-  // Ejecutar todas las protecciones
   removeWompiScripts();
   blockWompiGlobals();
   blockDynamicLoading();
   
-  // Limpiar periódicamente por si se intenta cargar después
   setInterval(removeWompiScripts, 1000);
   
   console.log('✅ Bloqueo completo del SDK Wompi implementado');
@@ -206,6 +198,8 @@ const Loader = () => (
 
 // Componente para elementos del carrito
 const CartItem = ({ item, onUpdateQuantity, onRemoveItem, getImageUrl }) => {
+  const [imageError, setImageError] = useState(false);
+  
   const handleQuantityChange = useCallback((newQuantity) => {
     onUpdateQuantity(item._id, newQuantity);
   }, [item._id, onUpdateQuantity]);
@@ -214,13 +208,11 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem, getImageUrl }) => {
     <li className="p-5 flex border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors duration-150">
       <div className="flex-shrink-0">
         <img
-          src={getImageUrl(item.image)}
+          src={imageError ? '/placeholder-product.jpg' : getImageUrl(item.image)}
           alt={item.name}
           className="h-20 w-20 object-cover rounded-lg shadow-sm"
-          onError={(e) => {
-            e.target.src = '/placeholder-product.jpg';
-            e.target.onerror = null;
-          }}
+          onError={() => setImageError(true)}
+          loading="lazy"
         />
       </div>
       <div className="ml-4 flex-1 flex flex-col justify-between">
@@ -449,10 +441,11 @@ const CartPage = () => {
     cartItems = [], 
     removeFromCart, 
     updateCartItem,
-    subtotal = 0 
+    subtotal = 0,
+    clearCart
   } = useCart();
   
-  const { loading: authLoading } = useAuth();
+  const { loading: authLoading, user } = useAuth();
   const navigate = useNavigate();
   
   const [processing, setProcessing] = useState(false);
@@ -472,22 +465,9 @@ const CartPage = () => {
     legalIdType: 'CC'
   });
 
-  // Verificar que el bloqueo esté funcionando
   useEffect(() => {
     console.log('🔍 Verificando bloqueo de Wompi SDK...');
-    console.log('window.$wompi:', window.$wompi);
-    console.log('window.Wompi:', window.Wompi);
-    console.log('window.wompi:', window.wompi);
     
-    // Verificar variables de entorno
-    console.log('Variables de entorno React:', {
-      API_URL,
-      WOMPI_PUBLIC_KEY: WOMPI_PUBLIC_KEY ? 'Configurada' : 'Falta configurar',
-      WOMPI_INTEGRITY_SECRET: WOMPI_INTEGRITY_SECRET ? 'Configurada' : 'Falta configurar',
-      WOMPI_MERCHANT_ID: WOMPI_MERCHANT_ID ? 'Configurada' : 'Falta configurar'
-    });
-    
-    // Verificar periódicamente que no se carguen scripts de Wompi
     const checkForWompiScripts = () => {
       const scripts = document.querySelectorAll('script');
       scripts.forEach(script => {
@@ -502,23 +482,30 @@ const CartPage = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Función para manejar las URLs de imagen
+  // CORRECCIÓN PRINCIPAL: Función mejorada para obtener URLs de imágenes
   const getImageUrl = useCallback((imagePath) => {
     if (!imagePath) return '/placeholder-product.jpg';
+    
+    // Si ya es una URL completa, devolverla directamente
     if (imagePath.startsWith('http')) return imagePath;
+    
+    // Si es una ruta que ya incluye "/uploads/", devolverla con la API_URL
+    if (imagePath.includes('/uploads/')) {
+      return `${API_URL}${imagePath}`;
+    }
+    
+    // Si es solo el nombre del archivo, construir la ruta completa
     return `${API_URL}/uploads/products/${imagePath}`;
-  }, []);
+  }, [API_URL]);
 
-  // Calcular envío y total
   const { shipping, total } = useMemo(() => {
-    const shippingCost = subtotal > 100000 ? 0 :0;
+    const shippingCost = subtotal > 100000 ? 0 : 0;
     return {
       shipping: shippingCost,
       total: subtotal + shippingCost
     };
   }, [subtotal]);
 
-  // Generar firma de integridad - CORREGIDO Y MEJORADO
   const generateIntegritySignature = useCallback((reference, amountInCents, currency = 'COP') => {
     if (!WOMPI_INTEGRITY_SECRET) {
       console.error('❌ Falta el secreto de integridad de Wompi');
@@ -526,12 +513,9 @@ const CartPage = () => {
     }
     
     try {
-      // Formato CORRECTO para la firma según documentación de Wompi
-      // reference + amountInCents + currency + WOMPI_INTEGRITY_SECRET
       const data = `${reference}${amountInCents}${currency}${WOMPI_INTEGRITY_SECRET}`;
       console.log('📝 Datos para firma:', data);
       
-      // Crear hash SHA256
       const signature = crypto.createHash('sha256').update(data).digest('hex');
       console.log('🔐 Firma generada:', signature);
       
@@ -542,7 +526,6 @@ const CartPage = () => {
     }
   }, [WOMPI_INTEGRITY_SECRET]);
 
-  // Manejar cambios en el formulario
   const handleInputChange = useCallback((name, value) => {
     setShippingInfo(prev => ({ ...prev, [name]: value }));
     if (formErrors[name]) {
@@ -550,7 +533,6 @@ const CartPage = () => {
     }
   }, [formErrors]);
 
-  // Validar formulario
   const validateForm = useCallback(() => {
     const errors = {};
     let isValid = true;
@@ -595,7 +577,6 @@ const CartPage = () => {
     return isValid;
   }, [shippingInfo, WOMPI_PUBLIC_KEY, WOMPI_INTEGRITY_SECRET]);
 
-  // Crear orden en el backend
   const createOrder = useCallback(async (orderData, token) => {
     try {
       const response = await axios.post(
@@ -619,18 +600,16 @@ const CartPage = () => {
       console.error('Error al crear orden:', error);
       throw new Error(error.response?.data?.error || 'Error al crear la orden');
     }
-  }, []);
+  }, [API_URL]);
 
-  // Redirección directa a checkout de Wompi - CORREGIDA
+  // MODIFICACIÓN PRINCIPAL: Cambiar la URL de redirección al perfil
   const redirectToWompiCheckout = useCallback((orderId, amountInCents, customerData) => {
     if (!WOMPI_PUBLIC_KEY) {
       throw new Error('Error de configuración: Clave pública de Wompi no definida');
     }
 
-    // Generar referencia única (usar guión bajo en lugar de guión para evitar problemas)
     const reference = `ORD_${orderId}_${Date.now()}`;
     
-    // Generar firma de integridad
     let signature;
     try {
       signature = generateIntegritySignature(reference, amountInCents, 'COP');
@@ -638,19 +617,18 @@ const CartPage = () => {
       throw new Error(`Error generando firma: ${error.message}`);
     }
 
-    // Construir URL de checkout - FORMA CORRECTA
     const baseUrl = 'https://checkout.wompi.co/p/';
     const params = new URLSearchParams({
       'public-key': WOMPI_PUBLIC_KEY,
       'currency': 'COP',
       'amount-in-cents': amountInCents.toString(),
       'reference': reference,
-      'signature:integrity': signature, // ¡CORRECCIÓN IMPORTANTE!
-      'redirect-url': `${window.location.origin}/order/${orderId}`,
+      'signature:integrity': signature,
+      // CAMBIO AQUÍ: Redirigir al perfil en lugar de a la orden
+      'redirect-url': `${window.location.origin}/profile`,
       'acceptance-token': WOMPI_ACCEPTANCE_TOKEN
     });
 
-    // Agregar datos del cliente si están disponibles
     if (customerData.email) {
       params.append('customer-data', JSON.stringify({
         email: customerData.email,
@@ -664,11 +642,12 @@ const CartPage = () => {
     const wompiCheckoutUrl = `${baseUrl}?${params.toString()}`;
     console.log('🔗 URL de checkout de Wompi:', wompiCheckoutUrl);
     
-    // Redirección directa
+    // Limpiar carrito antes de redirigir
+    clearCart();
+    
     window.location.href = wompiCheckoutUrl;
-  }, [generateIntegritySignature, WOMPI_PUBLIC_KEY]);
+  }, [generateIntegritySignature, WOMPI_PUBLIC_KEY, clearCart]);
 
-  // Manejar checkout
   const handleCheckout = useCallback(async (e) => {
     e.preventDefault();
     
@@ -694,7 +673,6 @@ const CartPage = () => {
     setFormErrors({});
 
     try {
-      // Preparar datos de la orden
       const orderData = {
         orderItems: cartItems.map(item => ({
           product: item._id,
@@ -720,16 +698,13 @@ const CartPage = () => {
         totalPrice: total
       };
 
-      // Crear orden en el backend
       const orderResponse = await createOrder(orderData, token);
       const orderId = orderResponse.order._id;
 
-      // Preparar datos para Wompi
       const amountInCents = Math.round(total * 100);
       const phoneDigits = shippingInfo.phone.replace(/\D/g, '');
       const formattedPhone = phoneDigits.startsWith('57') ? phoneDigits.substring(2) : phoneDigits;
 
-      // Redirección a Wompi
       redirectToWompiCheckout(
         orderId,
         amountInCents,
@@ -759,7 +734,6 @@ const CartPage = () => {
     redirectToWompiCheckout
   ]);
 
-  // Resto de funciones auxiliares
   const handleRemoveItem = useCallback((productId) => {
     removeFromCart(productId);
     setError('');
@@ -795,7 +769,6 @@ const CartPage = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Tu Carrito de Compras</h1>
           <p className="text-gray-600 mb-8">Revisa y completa tu pedido</p>
           
-          {/* Mensaje informativo sobre el método de pago */}
           <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6">
             <div className="flex items-start">
               <InformationCircleIcon className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0 text-blue-500" />

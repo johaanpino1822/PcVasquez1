@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { FaShoppingCart, FaUser, FaBars, FaTimes, FaHome, FaStore, FaChevronDown, FaGem } from 'react-icons/fa';
+import { FaShoppingCart, FaUser, FaBars, FaTimes, FaHome, FaStore, FaChevronDown, FaGem, FaHeart } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
 const Navbar = () => {
@@ -133,21 +133,26 @@ const Navbar = () => {
               <FaStore className="mr-2" /> Productos <FaChevronDown className="ml-1 text-xs" />
             </NavLink>
 
-            <NavLink to="/about" active={location.pathname === '/about'} scrolled={scrolled}>
-              Sobre Nosotros
-            </NavLink>
+           
 
             <CartLink itemCount={itemCount} scrolled={scrolled} />
 
             {user ? (
-              <motion.button
-                onClick={handleLogout}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`px-4 py-2.5 rounded-xl font-medium ${scrolled ? 'bg-gradient-to-r from-[#F2A9FD] to-[#e895fc] text-[#662D8F]' : 'bg-gradient-to-r from-[#662D8F] to-[#512577] text-white'} shadow-lg relative`}
-              >
-                Cerrar sesión
-              </motion.button>
+              <>
+                {/* Enlace al perfil */}
+                <NavLink to="/profile" active={location.pathname === '/profile'} scrolled={scrolled}>
+                  <FaUser className="mr-2" /> Mi Perfil
+                </NavLink>
+                
+                <motion.button
+                  onClick={handleLogout}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`px-4 py-2.5 rounded-xl font-medium ${scrolled ? 'bg-gradient-to-r from-[#F2A9FD] to-[#e895fc] text-[#662D8F]' : 'bg-gradient-to-r from-[#662D8F] to-[#512577] text-white'} shadow-lg relative`}
+                >
+                  Cerrar sesión
+                </motion.button>
+              </>
             ) : (
               <NavLink to="/login" active={location.pathname === '/login'} scrolled={scrolled}>
                 <FaUser className="mr-2" /> Mi Cuenta
@@ -160,13 +165,23 @@ const Navbar = () => {
             <CartLink itemCount={itemCount} scrolled={scrolled} isMobile={true} />
             
             {user ? (
-              <motion.button
-                onClick={handleLogout}
-                whileTap={{ scale: 0.95 }}
-                className={`p-2.5 rounded-xl ${scrolled ? 'bg-[#662D8F] text-white' : 'bg-[#F2A9FD] text-[#662D8F]'} shadow-md`}
-              >
-                <FaUser className="text-lg" />
-              </motion.button>
+              <>
+                {/* Enlace al perfil en móvil */}
+                <Link 
+                  to="/profile" 
+                  className={`p-2.5 rounded-xl ${scrolled ? 'bg-[#662D8F] text-white' : 'bg-[#F2A9FD] text-[#662D8F]'} shadow-md`}
+                >
+                  <FaUser className="text-lg" />
+                </Link>
+                
+                <motion.button
+                  onClick={handleLogout}
+                  whileTap={{ scale: 0.95 }}
+                  className={`p-2.5 rounded-xl ${scrolled ? 'bg-[#662D8F] text-white' : 'bg-[#F2A9FD] text-[#662D8F]'} shadow-md`}
+                >
+                  <FaTimes className="text-lg" />
+                </motion.button>
+              </>
             ) : (
               <Link 
                 to="/login" 
@@ -189,7 +204,7 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Menú móvil desplegable - FIXED: Ahora se muestra correctamente */}
+        {/* Menú móvil desplegable */}
         <motion.div
           className="lg:hidden overflow-hidden"
           initial="closed"
@@ -225,14 +240,20 @@ const Navbar = () => {
             </MobileItem>
 
             {user ? (
-              <motion.button
-                onClick={() => { setIsOpen(false); handleLogout(); }}
-                whileTap={{ scale: 0.95 }}
-                className="px-5 py-3 rounded-xl text-white bg-gradient-to-r from-[#662D8F] to-[#512577] font-medium shadow-lg mt-2"
-                variants={itemVariants}
-              >
-                Cerrar sesión
-              </motion.button>
+              <>
+                <MobileItem to="/profile" active={location.pathname === '/profile'} onClick={() => setIsOpen(false)} variants={itemVariants}>
+                  <FaUser className="mr-3" /> Mi Perfil
+                </MobileItem>
+                
+                <motion.button
+                  onClick={() => { setIsOpen(false); handleLogout(); }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-5 py-3 rounded-xl text-white bg-gradient-to-r from-[#662D8F] to-[#512577] font-medium shadow-lg mt-2"
+                  variants={itemVariants}
+                >
+                  Cerrar sesión
+                </motion.button>
+              </>
             ) : (
               <MobileItem to="/login" active={location.pathname === '/login'} onClick={() => setIsOpen(false)} variants={itemVariants}>
                 <FaUser className="mr-3" /> Mi Cuenta

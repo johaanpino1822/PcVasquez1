@@ -18,19 +18,14 @@ function Footer() {
                 <div className="bg-gradient-to-br from-[#F2A9FD] to-[#662D8F] p-2 rounded-lg mr-3">
                   <FaMapMarkerAlt className="text-white text-sm" />
                 </div>
-                <span>Calle 50 #42-30, Medellín, Colombia</span>
+                <span> Calle 49#65a-34. Sector Suramericana, Medellín, Colombia </span>
               </li>
-              <li className="flex items-start">
-                <div className="bg-gradient-to-br from-[#F2A9FD] to-[#662D8F] p-2 rounded-lg mr-3">
-                  <FaPhoneAlt className="text-white text-sm" />
-                </div>
-                <span>+57 604 123 4567</span>
-              </li>
+              
               <li className="flex items-start">
                 <div className="bg-gradient-to-br from-[#F2A9FD] to-[#662D8F] p-2 rounded-lg mr-3">
                   <FaWhatsapp className="text-white text-sm" />
                 </div>
-                <span>+57 300 123 4567</span>
+                <span>313 7287519</span>
               </li>
               <li className="flex items-start">
                 <div className="bg-gradient-to-br from-[#F2A9FD] to-[#662D8F] p-2 rounded-lg mr-3">
@@ -112,7 +107,7 @@ function Footer() {
             
             {/* Redes sociales */}
             <div className="flex space-x-4 mb-6">
-              <a href="#" className="bg-gradient-to-br from-[#F2A9FD] to-[#662D8F] w-12 h-12 rounded-full flex items-center justify-center transition transform hover:scale-110 shadow-lg">
+              <a href="https://www.facebook.com/wwwpcvasquezsascom/?locale=es_LA  " className="bg-gradient-to-br from-[#F2A9FD] to-[#662D8F] w-12 h-12 rounded-full flex items-center justify-center transition transform hover:scale-110 shadow-lg">
                 <FaFacebook size={18} />
               </a>
               <a href="#" className="bg-gradient-to-br from-[#F2A9FD] to-[#662D8F] w-12 h-12 rounded-full flex items-center justify-center transition transform hover:scale-110 shadow-lg">

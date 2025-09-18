@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -7,7 +7,6 @@ import {
   FaShoppingCart, 
   FaHeart, 
   FaRegHeart, 
-  FaStar, 
   FaChevronLeft, 
   FaChevronRight, 
   FaCheck, 
@@ -21,10 +20,25 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 
+// Constantes para colores y configuraciones
+const COLORS = {
+  primary: '#0C4B45',
+  primaryLight: '#83F4E9',
+  primaryDark: '#083D38',
+  secondary: '#662D8F',
+  secondaryLight: '#F2A9FD',
+  accent: '#4CAF50',
+  textDark: '#0C4B45',
+  textLight: '#E0F3EB',
+  background: '#F0F9F5'
+};
+
 const ProductPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart, cart } = useCart();
+  
+  // Estados
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -36,30 +50,20 @@ const ProductPage = () => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [autoPlay, setAutoPlay] = useState(false);
 
-  // Paleta de colores premium
-  const colors = {
-    primary: '#0C4B45',
-    primaryLight: '#83F4E9',
-    primaryDark: '#083D38',
-    secondary: '#662D8F',
-    secondaryLight: '#F2A9FD',
-    accent: '#4CAF50',
-    textDark: '#0C4B45',
-    textLight: '#E0F3EB',
-    background: '#F0F9F5'
-  };
-
+  // Obtener producto
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
         const res = await axios.get(`http://localhost:5000/api/products/${id}`);
-        setProduct(res.data.data);
-        if (res.data.data.colors?.length) {
-          setSelectedColor(res.data.data.colors[0]);
+        const productData = res.data.data;
+        
+        setProduct(productData);
+        if (productData.colors?.length) {
+          setSelectedColor(productData.colors[0]);
         }
-        if (res.data.data.sizes?.length) {
-          setSelectedSize(res.data.data.sizes[0]);
+        if (productData.sizes?.length) {
+          setSelectedSize(productData.sizes[0]);
         }
       } catch (error) {
         console.error('Error al obtener el producto:', error);
@@ -84,7 +88,8 @@ const ProductPage = () => {
     return () => clearInterval(interval);
   }, [autoPlay, product?.images]);
 
-  const handleAddToCart = async () => {
+  // Handlers
+  const handleAddToCart = useCallback(async () => {
     if (!product || quantity < 1) return;
 
     setIsAddingToCart(true);
@@ -117,91 +122,271 @@ const ProductPage = () => {
     } finally {
       setIsAddingToCart(false);
     }
-  };
+  }, [product, quantity, selectedColor, selectedSize, addToCart]);
 
-  const handleQuantityChange = (value) => {
+  const handleQuantityChange = useCallback((value) => {
     const newQuantity = parseInt(value);
     if (!isNaN(newQuantity) && newQuantity >= 1 && newQuantity <= (product?.stock || 10)) {
       setQuantity(newQuantity);
     }
-  };
+  }, [product?.stock]);
 
-  const incrementQuantity = () => {
+  const incrementQuantity = useCallback(() => {
     if (quantity < (product?.stock || 10)) {
       setQuantity(quantity + 1);
     }
-  };
+  }, [quantity, product?.stock]);
 
-  const decrementQuantity = () => {
+  const decrementQuantity = useCallback(() => {
     if (quantity > 1) {
       setQuantity(quantity - 1);
     }
-  };
+  }, [quantity]);
 
-  const nextImage = () => {
+  const nextImage = useCallback(() => {
     setSelectedImage((prev) => (prev + 1) % (product?.images?.length || 1));
-  };
+  }, [product?.images?.length]);
 
-  const prevImage = () => {
+  const prevImage = useCallback(() => {
     setSelectedImage((prev) => (prev - 1 + (product?.images?.length || 1)) % (product?.images?.length || 1));
-  };
+  }, [product?.images?.length]);
 
-  const getImageUrl = (imagePath) => {
+  const getImageUrl = useCallback((imagePath) => {
     if (!imagePath) return '/placeholder.jpg';
     if (imagePath.startsWith('http')) return imagePath;
     return `/uploads/products/${imagePath}`;
-  };
+  }, []);
 
-  const isInCart = cart.some(item => item.product._id === product?._id);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#0C4B45]/5 to-[#83F4E9]/5">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse bg-white rounded-3xl shadow-xl overflow-hidden">
-            <div className="md:flex">
-              <div className="md:w-1/2 h-[500px] bg-gray-100 rounded-l-3xl"></div>
-              <div className="p-10 md:w-1/2 space-y-6">
-                <div className="h-10 bg-gray-100 rounded-full w-3/4"></div>
-                <div className="h-6 bg-gray-100 rounded-full w-1/2"></div>
-                <div className="h-32 bg-gray-100 rounded-2xl"></div>
-                <div className="h-14 bg-gray-100 rounded-full w-1/3"></div>
-                <div className="h-16 bg-gray-100 rounded-full w-full"></div>
-              </div>
+  // Componentes auxiliares
+  const LoadingState = () => (
+    <div className="min-h-screen mt-16 pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#0C4B45]/5 to-[#83F4E9]/5">
+      <div className="max-w-7xl mx-auto">
+        <div className="animate-pulse bg-white rounded-3xl shadow-xl overflow-hidden">
+          <div className="md:flex">
+            <div className="md:w-1/2 h-[500px] bg-gray-100 rounded-l-3xl"></div>
+            <div className="p-10 md:w-1/2 space-y-6">
+              <div className="h-10 bg-gray-100 rounded-full w-3/4"></div>
+              <div className="h-6 bg-gray-100 rounded-full w-1/2"></div>
+              <div className="h-32 bg-gray-100 rounded-2xl"></div>
+              <div className="h-14 bg-gray-100 rounded-full w-1/3"></div>
+              <div className="h-16 bg-gray-100 rounded-full w-full"></div>
             </div>
           </div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (!product) {
-    return (
-      <div className="min-h-screen pt-32 pb-20 px-4 sm:px-6 lg:px-8 flex items-center justify-center bg-gradient-to-b from-[#0C4B45]/5 to-[#83F4E9]/5">
-        <div className="text-center max-w-md p-8 bg-white rounded-3xl shadow-xl">
-          <h2 className="text-3xl font-bold text-[#0C4B45] mb-4">Producto no encontrado</h2>
-          <p className="text-gray-600 mb-6">Lo sentimos, no pudimos encontrar el producto que buscas.</p>
-          <motion.button 
-            onClick={() => navigate('/')}
-            className="w-full py-3 px-6 bg-gradient-to-r from-[#662D8F] to-[#F2A9FD] text-white rounded-xl font-medium hover:from-[#512577] hover:to-[#e895fc] transition-all"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Volver a la tienda
-          </motion.button>
-        </div>
+  const ErrorState = () => (
+    <div className="min-h-screen pt-32 pb-20 px-4 sm:px-6 lg:px-8 mt-16 flex items-center justify-center bg-gradient-to-b from-[#0C4B45]/5 to-[#83F4E9]/5">
+      <div className="text-center max-w-md p-8 bg-white rounded-3xl shadow-xl">
+        <h2 className="text-3xl font-bold text-[#0C4B45] mb-4">Producto no encontrado</h2>
+        <p className="text-gray-600 mb-6">Lo sentimos, no pudimos encontrar el producto que buscas.</p>
+        <motion.button 
+          onClick={() => navigate('/')}
+          className="w-full py-3 px-6 bg-gradient-to-r from-[#662D8F] to-[#F2A9FD] text-white rounded-xl font-medium hover:from-[#512577] hover:to-[#e895fc] transition-all"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          Volver a la tienda
+        </motion.button>
       </div>
-    );
-  }
+    </div>
+  );
 
-  // Usar product.images si está disponible, de lo contrario usar product.image como respaldo
+  const ImageGallery = ({ images, selectedImage, onSelectImage, onPrev, onNext, onToggleFullscreen, onToggleAutoPlay, autoPlay }) => (
+    <div className="md:w-1/2 relative">
+      <div className="relative h-[500px] bg-gradient-to-br from-[#0C4B45]/10 to-[#83F4E9]/10 flex items-center justify-center p-10 overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={selectedImage}
+            src={images[selectedImage]}
+            alt={product.name}
+            className="max-h-full max-w-full object-contain cursor-zoom-in absolute"
+            onClick={onToggleFullscreen}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.1 }}
+            transition={{ duration: 0.3 }}
+          />
+        </AnimatePresence>
+        
+        {images.length > 1 && (
+          <>
+            <motion.button 
+              onClick={(e) => { e.stopPropagation(); onPrev(); }}
+              className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10 backdrop-blur-sm"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <FaChevronLeft className="text-[#662D8F] text-lg" />
+            </motion.button>
+            <motion.button 
+              onClick={(e) => { e.stopPropagation(); onNext(); }}
+              className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10 backdrop-blur-sm"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <FaChevronRight className="text-[#662D8F] text-lg" />
+            </motion.button>
+          </>
+        )}
+        
+        {images.length > 1 && (
+          <motion.button
+            onClick={() => onToggleAutoPlay(!autoPlay)}
+            className="absolute top-6 left-6 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10 backdrop-blur-sm"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            {autoPlay ? (
+              <FaPause className="text-[#662D8F] text-lg" />
+            ) : (
+              <FaPlay className="text-[#662D8F] text-lg" />
+            )}
+          </motion.button>
+        )}
+        
+        <motion.button
+          onClick={(e) => { e.stopPropagation(); onToggleFullscreen(true); }}
+          className="absolute top-6 right-6 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10 backdrop-blur-sm"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          <FaExpand className="text-[#662D8F] text-lg" />
+        </motion.button>
+        
+        {images.length > 1 && (
+          <div className="absolute bottom-6 left-0 right-0 flex justify-center space-x-2 z-10">
+            {images.map((_, index) => (
+              <motion.button 
+                key={index}
+                onClick={(e) => { e.stopPropagation(); onSelectImage(index); }}
+                className={`w-3 h-3 rounded-full transition-all ${selectedImage === index ? 'bg-[#662D8F] scale-125' : 'bg-gray-300 hover:bg-[#F2A9FD]'}`}
+                whileHover={{ scale: 1.2 }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      
+      {images.length > 1 && (
+        <div className="p-6 flex space-x-4 overflow-x-auto">
+          {images.map((img, index) => (
+            <motion.button
+              key={index}
+              onClick={() => onSelectImage(index)}
+              className={`flex-shrink-0 w-20 h-20 border-2 rounded-xl overflow-hidden transition-all ${selectedImage === index ? 'border-[#662D8F] shadow-md' : 'border-transparent hover:border-gray-200'}`}
+              whileHover={{ y: -3, scale: 1.05 }}
+            >
+              <img 
+                src={img} 
+                alt={`Miniatura ${index + 1}`}
+                className="w-full h-full object-cover bg-gray-50"
+              />
+              {selectedImage === index && (
+                <div className="absolute inset-0 border-2 border-[#662D8F] rounded-xl" />
+              )}
+            </motion.button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const FullscreenModal = ({ images, selectedImage, onSelectImage, onClose, onPrev, onNext }) => (
+    <AnimatePresence>
+      {showFullscreenImage && (
+        <motion.div 
+          className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+        >
+          <motion.div 
+            className="relative max-w-6xl w-full max-h-[90vh]"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <motion.button
+              onClick={onClose}
+              className="absolute top-6 right-6 text-white text-4xl z-10 hover:text-[#F2A9FD] transition-colors bg-black/30 rounded-full p-2"
+              whileHover={{ rotate: 90, scale: 1.1 }}
+            >
+              &times;
+            </motion.button>
+            
+            <div className="relative h-full w-full flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={selectedImage}
+                  src={images[selectedImage]}
+                  alt={product.name}
+                  className="max-h-full max-w-full object-contain"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.1 }}
+                  transition={{ duration: 0.3 }}
+                />
+              </AnimatePresence>
+              
+              {images.length > 1 && (
+                <>
+                  <motion.button 
+                    onClick={(e) => { e.stopPropagation(); onPrev(); }}
+                    className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 p-4 rounded-full text-white text-xl backdrop-blur-sm"
+                    whileHover={{ scale: 1.1 }}
+                  >
+                    <FaChevronLeft />
+                  </motion.button>
+                  <motion.button 
+                    onClick={(e) => { e.stopPropagation(); onNext(); }}
+                    className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 p-4 rounded-full text-white text-xl backdrop-blur-sm"
+                    whileHover={{ scale: 1.1 }}
+                  >
+                    <FaChevronRight />
+                  </motion.button>
+                  
+                  <div className="absolute bottom-8 left-0 right-0 flex justify-center space-x-3">
+                    {images.map((_, index) => (
+                      <motion.button 
+                        key={index}
+                        onClick={(e) => { e.stopPropagation(); onSelectImage(index); }}
+                        className={`w-3 h-3 rounded-full transition-all ${selectedImage === index ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/70'}`}
+                        whileHover={{ scale: 1.2 }}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="absolute top-6 left-6 text-white flex items-center space-x-2">
+                    <span className="text-sm bg-black/30 px-2 py-1 rounded">
+                      {selectedImage + 1} / {images.length}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  if (loading) return <LoadingState />;
+  if (!product) return <ErrorState />;
+
+  // Preparar imágenes
   const images = product.images && product.images.length > 0 
     ? product.images.map(img => getImageUrl(img)) 
     : product.image 
       ? [getImageUrl(product.image)] 
       : ['/placeholder.jpg'];
 
-  const mainImage = images[selectedImage] || '/placeholder.jpg';
+  const isInCart = cart.some(item => item.product._id === product._id);
 
   return (
     <div className="min-h-screen pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#0C4B45]/5 to-[#83F4E9]/5">
@@ -213,126 +398,22 @@ const ProductPage = () => {
           className="bg-white rounded-3xl shadow-xl overflow-hidden"
         >
           <div className="md:flex">
-            {/* Gallery Section - Mejorada */}
-            <div className="md:w-1/2 relative">
-              <div className="relative h-[500px] bg-gradient-to-br from-[#0C4B45]/10 to-[#83F4E9]/10 flex items-center justify-center p-10 overflow-hidden">
-                <AnimatePresence mode="wait">
-                  <motion.img
-                    key={selectedImage}
-                    src={mainImage}
-                    alt={product.name}
-                    className="max-h-full max-w-full object-contain cursor-zoom-in absolute"
-                    onClick={() => setShowFullscreenImage(true)}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 1.1 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </AnimatePresence>
-                
-                {/* Image Navigation */}
-                {images.length > 1 && (
-                  <>
-                    <motion.button 
-                      onClick={(e) => { e.stopPropagation(); prevImage(); }}
-                      className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10 backdrop-blur-sm"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <FaChevronLeft className="text-[#662D8F] text-lg" />
-                    </motion.button>
-                    <motion.button 
-                      onClick={(e) => { e.stopPropagation(); nextImage(); }}
-                      className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10 backdrop-blur-sm"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <FaChevronRight className="text-[#662D8F] text-lg" />
-                    </motion.button>
-                  </>
-                )}
-                
-                {/* Auto-play Controls */}
-                {images.length > 1 && (
-                  <motion.button
-                    onClick={() => setAutoPlay(!autoPlay)}
-                    className="absolute top-6 left-6 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10 backdrop-blur-sm"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    {autoPlay ? (
-                      <FaPause className="text-[#662D8F] text-lg" />
-                    ) : (
-                      <FaPlay className="text-[#662D8F] text-lg" />
-                    )}
-                  </motion.button>
-                )}
-                
-                {/* Fullscreen Button */}
-                <motion.button
-                  onClick={(e) => { e.stopPropagation(); setShowFullscreenImage(true); }}
-                  className="absolute top-6 right-6 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg z-10 backdrop-blur-sm"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <FaExpand className="text-[#662D8F] text-lg" />
-                </motion.button>
-                
-                {/* Image Indicators */}
-                {images.length > 1 && (
-                  <div className="absolute bottom-6 left-0 right-0 flex justify-center space-x-2 z-10">
-                    {images.map((_, index) => (
-                      <motion.button 
-                        key={index}
-                        onClick={(e) => { e.stopPropagation(); setSelectedImage(index); }}
-                        className={`w-3 h-3 rounded-full transition-all ${selectedImage === index ? 'bg-[#662D8F] scale-125' : 'bg-gray-300 hover:bg-[#F2A9FD]'}`}
-                        whileHover={{ scale: 1.2 }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              {/* Thumbnails - Mejorado */}
-              {images.length > 1 && (
-                <div className="p-6 flex space-x-4 overflow-x-auto">
-                  {images.map((img, index) => (
-                    <motion.button
-                      key={index}
-                      onClick={() => setSelectedImage(index)}
-                      className={`flex-shrink-0 w-20 h-20 border-2 rounded-xl overflow-hidden transition-all ${selectedImage === index ? 'border-[#662D8F] shadow-md' : 'border-transparent hover:border-gray-200'}`}
-                      whileHover={{ y: -3, scale: 1.05 }}
-                    >
-                      <img 
-                        src={img} 
-                        alt={`Miniatura ${index + 1}`}
-                        className="w-full h-full object-cover bg-gray-50"
-                      />
-                      {selectedImage === index && (
-                        <div className="absolute inset-0 border-2 border-[#662D8F] rounded-xl" />
-                      )}
-                    </motion.button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ImageGallery 
+              images={images}
+              selectedImage={selectedImage}
+              onSelectImage={setSelectedImage}
+              onPrev={prevImage}
+              onNext={nextImage}
+              onToggleFullscreen={setShowFullscreenImage}
+              onToggleAutoPlay={setAutoPlay}
+              autoPlay={autoPlay}
+            />
             
             {/* Product Info Section */}
             <div className="p-10 md:w-1/2">
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h1 className="text-4xl font-bold text-[#0C4B45] mb-3">{product.name}</h1>
-                  <div className="flex items-center mb-5">
-                    <div className="flex mr-3">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <FaStar 
-                          key={star} 
-                          className={`text-xl ${star <= (product.rating || 0) ? 'text-[#F2A9FD]' : 'text-gray-300'}`} 
-                        />
-                      ))}
-                    </div>
-                    <span className="text-sm text-gray-500">({product.reviewCount || 0} reseñas)</span>
-                  </div>
                 </div>
                 
                 <motion.button 
@@ -526,86 +607,14 @@ const ProductPage = () => {
         </motion.div>
       </div>
       
-      {/* Fullscreen Image Modal - Mejorado */}
-      <AnimatePresence>
-        {showFullscreenImage && (
-          <motion.div 
-            className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowFullscreenImage(false)}
-          >
-            <motion.div 
-              className="relative max-w-6xl w-full max-h-[90vh]"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <motion.button
-                onClick={() => setShowFullscreenImage(false)}
-                className="absolute top-6 right-6 text-white text-4xl z-10 hover:text-[#F2A9FD] transition-colors bg-black/30 rounded-full p-2"
-                whileHover={{ rotate: 90, scale: 1.1 }}
-              >
-                &times;
-              </motion.button>
-              
-              <div className="relative h-full w-full flex items-center justify-center">
-                <AnimatePresence mode="wait">
-                  <motion.img
-                    key={selectedImage}
-                    src={mainImage}
-                    alt={product.name}
-                    className="max-h-full max-w-full object-contain"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 1.1 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </AnimatePresence>
-                
-                {images.length > 1 && (
-                  <>
-                    <motion.button 
-                      onClick={(e) => { e.stopPropagation(); prevImage(); }}
-                      className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 p-4 rounded-full text-white text-xl backdrop-blur-sm"
-                      whileHover={{ scale: 1.1 }}
-                    >
-                      <FaChevronLeft />
-                    </motion.button>
-                    <motion.button 
-                      onClick={(e) => { e.stopPropagation(); nextImage(); }}
-                      className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 p-4 rounded-full text-white text-xl backdrop-blur-sm"
-                      whileHover={{ scale: 1.1 }}
-                    >
-                      <FaChevronRight />
-                    </motion.button>
-                    
-                    <div className="absolute bottom-8 left-0 right-0 flex justify-center space-x-3">
-                      {images.map((_, index) => (
-                        <motion.button 
-                          key={index}
-                          onClick={(e) => { e.stopPropagation(); setSelectedImage(index); }}
-                          className={`w-3 h-3 rounded-full transition-all ${selectedImage === index ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/70'}`}
-                          whileHover={{ scale: 1.2 }}
-                        />
-                      ))}
-                    </div>
-
-                    <div className="absolute top-6 left-6 text-white flex items-center space-x-2">
-                      <span className="text-sm bg-black/30 px-2 py-1 rounded">
-                        {selectedImage + 1} / {images.length}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <FullscreenModal 
+        images={images}
+        selectedImage={selectedImage}
+        onSelectImage={setSelectedImage}
+        onClose={() => setShowFullscreenImage(false)}
+        onPrev={prevImage}
+        onNext={nextImage}
+      />
     </div>
   );
 };

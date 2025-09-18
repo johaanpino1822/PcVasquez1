@@ -14,6 +14,8 @@ import {
   FaMinus
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+// Importación corregida - usar favoritesAPI en lugar de funciones directas
+import { favoritesAPI } from '../api/axios';
 
 const ProductCard = ({ product }) => {
   const { cart, addToCart, updateQuantity } = useCart();
@@ -23,6 +25,7 @@ const ProductCard = ({ product }) => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   // Paleta de colores premium
   const colors = {
@@ -46,7 +49,23 @@ const ProductCard = ({ product }) => {
       setIsAdded(false);
       setQuantity(1);
     }
+    
+    // Verificar si el producto está en favoritos
+    checkIfFavorite();
   }, [cart, product._id]);
+
+  // Función para verificar si el producto está en favoritos - CORREGIDA
+  const checkIfFavorite = async () => {
+    try {
+      // Usar favoritesAPI.getFavorites() en lugar de getFavorites()
+      const response = await favoritesAPI.getFavorites();
+      const favorites = response.data;
+      const isFav = favorites.some(fav => fav._id === product._id);
+      setIsFavorite(isFav);
+    } catch (error) {
+      console.error('Error al verificar favoritos:', error);
+    }
+  };
 
   const getImageUrl = (imagePath) => {
     if (!imagePath) return '/placeholder.jpg';
@@ -65,11 +84,6 @@ const ProductCard = ({ product }) => {
     e.preventDefault();
     addToCart(product, quantity);
     setIsAdded(true);
-    
-    // Efecto de confeti visual
-    if (!isAdded) {
-      // Aquí podrías agregar una animación de confeti
-    }
   };
 
   const handleUpdateQuantity = (e, newQuantity) => {
@@ -80,9 +94,19 @@ const ProductCard = ({ product }) => {
     if (isAdded) updateQuantity(product._id, newQuantity);
   };
 
-  const toggleFavorite = (e) => {
+  // Manejar el toggle de favoritos - CORREGIDA
+  const toggleFavoriteHandler = async (e) => {
     e.preventDefault();
-    setIsFavorite(!isFavorite);
+    setFavoriteLoading(true);
+    try {
+      // Usar favoritesAPI.toggleFavorite() en lugar de toggleFavorite()
+      const response = await favoritesAPI.toggleFavorite(product._id);
+      setIsFavorite(response.data.isFavorite);
+    } catch (error) {
+      console.error('Error al alternar favorito:', error);
+    } finally {
+      setFavoriteLoading(false);
+    }
   };
 
   const calculateDiscount = () => {
@@ -130,12 +154,15 @@ const ProductCard = ({ product }) => {
 
         {/* Favorite Button */}
         <motion.button 
-          onClick={toggleFavorite}
+          onClick={toggleFavoriteHandler}
+          disabled={favoriteLoading}
           className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/90 shadow-md hover:bg-white transition-colors"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
         >
-          {isFavorite ? (
+          {favoriteLoading ? (
+            <div className="w-4 h-4 border-t-2 border-[#F2A9FD] rounded-full animate-spin"></div>
+          ) : isFavorite ? (
             <FaHeart className="text-[#F2A9FD] text-lg" />
           ) : (
             <FaRegHeart className="text-gray-600 hover:text-[#F2A9FD] text-lg" />
@@ -283,16 +310,6 @@ const ProductCard = ({ product }) => {
               } : {}}
               whileTap={!isAdded ? { scale: 0.98 } : {}}
             >
-              {/* Efecto de onda al hacer clic */}
-              {!isAdded && (
-                <motion.span 
-                  className="absolute inset-0 bg-white opacity-20"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 10, opacity: 0 }}
-                  transition={{ duration: 0.6 }}
-                />
-              )}
-              
               <span className="relative z-10 flex items-center justify-center">
                 {isAdded ? (
                   <>
@@ -485,7 +502,8 @@ const ProductCard = ({ product }) => {
                       </motion.button>
                       
                       <motion.button
-                        onClick={toggleFavorite}
+                        onClick={toggleFavoriteHandler}
+                        disabled={favoriteLoading}
                         className={`p-4 rounded-xl flex items-center justify-center text-xl ${
                           isFavorite 
                             ? 'bg-[#F2A9FD]/20 text-[#662D8F]' 
@@ -494,7 +512,13 @@ const ProductCard = ({ product }) => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        {isFavorite ? <FaHeart /> : <FaRegHeart />}
+                        {favoriteLoading ? (
+                          <div className="w-5 h-5 border-t-2 border-[#F2A9FD] rounded-full animate-spin"></div>
+                        ) : isFavorite ? (
+                          <FaHeart />
+                        ) : (
+                          <FaRegHeart />
+                        )}
                       </motion.button>
                     </div>
                   </div>

@@ -130,7 +130,10 @@ router.post('/login', async (req, res) => {
 // 🟢 Ruta protegida: obtener perfil del usuario autenticado
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user.id)
+      .select('-password')
+      .populate('favorites');
+    
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
@@ -139,6 +142,105 @@ router.get('/profile', authMiddleware, async (req, res) => {
     console.error('🔥 Error al obtener perfil:', err.message);
     res.status(500).json({ 
       message: 'Error al obtener el perfil',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+});
+
+// 🟢 Ruta para agregar/eliminar favoritos
+router.post('/favorites/:productId', authMiddleware, async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const userId = req.user.id;
+
+    // Validar que el productId sea un ObjectId válido
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ message: 'ID de producto no válido' });
+    }
+
+    const user = await User.findById(userId);
+    
+    // Verificar si el producto ya está en favoritos
+    const isFavorite = user.favorites.includes(productId);
+    
+    if (isFavorite) {
+      // Eliminar de favoritos
+      user.favorites = user.favorites.filter(id => id.toString() !== productId);
+      await user.save();
+      return res.json({ 
+        message: 'Producto eliminado de favoritos',
+        isFavorite: false
+      });
+    } else {
+      // Agregar a favoritos
+      user.favorites.push(productId);
+      await user.save();
+      return res.json({ 
+        message: 'Producto agregado a favoritos',
+        isFavorite: true
+      });
+    }
+  } catch (err) {
+    console.error('🔥 Error al gestionar favoritos:', err.message);
+    res.status(500).json({ 
+      message: 'Error al gestionar favoritos',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+});
+
+// 🟢 Ruta para obtener favoritos
+router.get('/favorites', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id)
+      .populate('favorites')
+      .select('favorites');
+    
+    res.json(user.favorites);
+  } catch (err) {
+    console.error('🔥 Error al obtener favoritos:', err.message);
+    res.status(500).json({ 
+      message: 'Error al obtener favoritos',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+});
+// 🟢 Ruta para actualizar perfil de usuario
+router.put('/profile', authMiddleware, async (req, res) => {
+  try {
+    const { name, phone, address } = req.body;
+    const userId = req.user.id;
+
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (phone) updateData.phone = phone;
+    if (address) {
+      updateData.address = {
+        street: address.street || '',
+        city: address.city || '',
+        state: address.state || '',
+        zipCode: address.zipCode || ''
+      };
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    res.json({
+      message: 'Perfil actualizado correctamente',
+      user
+    });
+  } catch (err) {
+    console.error('🔥 Error al actualizar perfil:', err.message);
+    res.status(500).json({ 
+      message: 'Error al actualizar el perfil',
       error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }

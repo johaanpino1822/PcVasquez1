@@ -3,9 +3,12 @@ import { Link } from 'react-router-dom';
 import { FaLaptop, FaSearch, FaStar, FaShieldAlt } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
+// Importa la imagen correctamente (asegúrate de que la ruta sea correcta)
+import pcvazquezLogo from '../image/pcvazquez.jpg';
+
 const HeroWelcome = () => {
   return (
-    <section className="relative h-screen min-h-[800px] flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#0A2E38] via-[#072A32] to-[#051F26]">
+    <section className="relative h-screen min-h-[800px] mt-16  flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#0A2E38] via-[#072A32] to-[#051F26]">
       {/* Efecto de partículas animadas */}
       {[...Array(15)].map((_, i) => (
         <motion.div
@@ -45,38 +48,45 @@ const HeroWelcome = () => {
           transition={{ duration: 1 }}
           className="max-w-6xl mx-auto"
         >
-          {/* Título principal */}
+          {/* Logo profesional - Imagen PCVASQUEZ */}
           <motion.div 
-            className="mb-8"
+            className="mb-8 flex justify-center"
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <motion.h1 
-              className="text-5xl md:text-7xl font-bold mb-6 leading-tight tracking-tight"
-              style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                background: 'linear-gradient(45deg, #C7A8FF 30%, #7FDBFF 70%)',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                color: 'transparent',
-                letterSpacing: '1.5px',
-                fontWeight: 400
-              }}
-              whileHover={{ scale: 1.02 }}
-            >
-              PC<span className="font-bold" style={{ fontWeight: 700 }}>VASQUEZ</span>
-            </motion.h1>
-            
-            <motion.div 
-              className="w-32 h-1 bg-gradient-to-r from-[#C7A8FF] to-[#7FDBFF] mx-auto rounded-full"
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ delay: 0.8, duration: 1 }}
-            />
+            <div className="relative">
+              {/* Contenedor para la imagen del logo */}
+              <div className="relative bg-gradient-to-br from-[#5E2B97]/20 to-[#C7A8FF]/20 p-6 rounded-2xl backdrop-blur-sm border border-[#7FDBFF]/30 shadow-2xl shadow-[#5E2B97]/20">
+                {/* Imagen del logo PCVASQUEZ - SOLUCIÓN AL PROBLEMA */}
+                <div className="relative w-full max-w-md mx-auto">
+                  {/* Usa la imagen importada correctamente */}
+                  <img 
+                    src={pcvazquezLogo}
+                    alt="PCVASQUEZ Logo" 
+                    className="w-full h-auto mx-auto brightness-110 contrast-110 drop-shadow-lg max-h-40 object-contain"
+                    onError={(e) => {
+                      // Fallback en caso de que la imagen no cargue
+                      e.target.onerror = null;
+                      e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='120' viewBox='0 0 400 120'%3E%3Crect width='400' height='120' fill='%235E2B97'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='32' fill='white'%3EPCVASQUEZ%3C/text%3E%3Ctext x='50%25' y='75%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='16' fill='%23C7A8FF'%3ESOMOS TECNOLOGÍA%3C/text%3E%3C/svg%3E";
+                    }}
+                  />
+                  {/* Efecto de brillo sobre la imagen */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-transparent mix-blend-overlay"></div>
+                </div>
+                
+                {/* Línea decorativa */}
+                <motion.div 
+                  className="w-48 h-1 bg-gradient-to-r from-[#C7A8FF] to-[#7FDBFF] mx-auto mt-4 rounded-full"
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ delay: 0.8, duration: 1 }}
+                />
+              </div>
+            </div>
           </motion.div>
           
-          {/* Subtítulo */}
+          {/* Resto del código se mantiene igual */}
           <motion.div 
             className="mb-12"
             initial={{ y: 20, opacity: 0 }}

@@ -158,41 +158,9 @@ const AdminLayout = () => {
         
         {/* Cerrar sesión y menú adicional */}
         <div className="p-4 border-t border-[#083D38] space-y-2">
-          <Link 
-            to="/admin/settings" 
-            className="flex items-center py-2 px-6 hover:bg-[#083D38] rounded-lg transition-colors group text-white"
-            onClick={() => setActiveItem('settings')}
-          >
-            <FaCog className="text-lg text-[#83F4E9] group-hover:text-white" />
-            {(sidebarOpen || isHovering) && (
-              <motion.span
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3 }}
-                className="ml-3"
-              >
-                Configuración
-              </motion.span>
-            )}
-          </Link>
+         
           
-          <Link 
-            to="/admin/help" 
-            className="flex items-center py-2 px-6 hover:bg-[#083D38] rounded-lg transition-colors group text-white"
-            onClick={() => setActiveItem('help')}
-          >
-            <FaQuestionCircle className="text-lg text-[#83F4E9] group-hover:text-white" />
-            {(sidebarOpen || isHovering) && (
-              <motion.span
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3 }}
-                className="ml-3"
-              >
-                Ayuda
-              </motion.span>
-            )}
-          </Link>
+       
           
           <button 
             onClick={handleLogout}

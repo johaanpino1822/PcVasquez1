@@ -11,7 +11,7 @@ import CheckoutPage from './pages/CheckoutPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-
+import ProfilePage from './pages/ProfilePage'; // Nuevo: Página de perfil
 import PaymentResultPage from './pages/PaymentResultPage';
 
 // Componentes
@@ -24,7 +24,7 @@ import AdminLayout from './admin/AdminLayout';
 import Dashboard from './admin/Dashboard';
 import AdminProducts from './admin/Products';
 import ProductCreate from './admin/ProductCreate';
-import ProductEdit from './admin/ProductEdit'; // Nuevo componente para edición
+import ProductEdit from './admin/ProductEdit';
 import UserList from './admin/UserList';
 import AdminOrders from './admin/AdminOrders';
 
@@ -60,8 +60,15 @@ function App() {
                   </PrivateRoute>
                 } 
               />
+              <Route 
+                path="/profile" 
+                element={
+                  <PrivateRoute>
+                    <ProfilePage />
+                  </PrivateRoute>
+                } 
+              />
               <Route path="/order/:id" element={<OrderConfirmationPage />} />
-              
               <Route path="/payment/result" element={<PaymentResultPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
@@ -82,7 +89,7 @@ function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="products" element={<AdminProducts />} />
               <Route path="products/new" element={<ProductCreate />} />
-              <Route path="products/edit/:id" element={<ProductEdit />} /> {/* Cambiado a ProductEdit */}
+              <Route path="products/edit/:id" element={<ProductEdit />} />
               <Route path="users" element={<UserList />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="*" element={<Navigate to="dashboard" replace />} />

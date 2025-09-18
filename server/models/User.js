@@ -18,6 +18,11 @@ const userSchema = new mongoose.Schema({
   },
   phone: { type: String },
   orders: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }],
+  favorites: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Product',
+    default: [] 
+  }],
   createdAt: { type: Date, default: Date.now }
 });
 
